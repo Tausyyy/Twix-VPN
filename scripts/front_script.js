@@ -1,3 +1,37 @@
+window.onload = function () {
+	const preloader = this.document.getElementById('preloader')
+	preloader.style.opacity = '0'
+	this.setTimeout(() => {
+		preloader.style.display = 'none'
+	}, 500)
+}
+
+const API_BASE = ''
+
+function hideAllScreens() {
+	;['welcome', 'main', 'reg', 'success_reg', 'main_window'].forEach(id => {
+		document.getElementById(id)?.classList.add('hidden')
+	})
+}
+
+function showLoggedIn() {
+	hideAllScreens()
+	document.getElementById('main_window').classList.remove('hidden')
+}
+
+async function checkSession() {
+	try {
+		const response = await fetch(`${API_BASE}/me`, {
+			credentials: 'include'
+		})
+		if (response.ok) {
+			showLoggedIn()
+		}
+	} catch (error) {
+		console.error('Не удалось проверить сессию:', error)
+	}
+}
+
 document.getElementById('logo_btn').addEventListener('click', () => {
 	document.getElementById('main').classList.add('hidden')
 	document.getElementById('reg').classList.add('hidden')
@@ -44,9 +78,10 @@ form.addEventListener('submit', async e => {
 	}
 
 	try {
-		const response = await fetch('http://localhost:3000/login', {
+		const response = await fetch(`${API_BASE}/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
 			body: JSON.stringify({
 				email: email.value,
 				password: password.value
@@ -56,8 +91,7 @@ form.addEventListener('submit', async e => {
 		const data = await response.json()
 
 		if (response.ok) {
-			document.getElementById('main').classList.add('hidden')
-			document.getElementById('main_window').classList.remove('hidden')
+			showLoggedIn()
 		} else {
 			alert(data.error)
 		}
@@ -109,9 +143,10 @@ regForm.addEventListener('submit', async e => {
 	passAlert.classList.add('hidden')
 
 	try {
-		const response = await fetch('http://localhost:3000/register', {
+		const response = await fetch(`${API_BASE}/register`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
 			body: JSON.stringify({ email, password: currPass })
 		})
 
@@ -134,3 +169,13 @@ document.getElementById('join_btn').addEventListener('click', () => {
 	document.getElementById('success_reg').classList.add('hidden')
 	document.getElementById('main').classList.remove('hidden')
 })
+
+const header = document.getElementById('header')
+const mainWindow = document.getElementById('main_window')
+
+function showMainWindow() {
+	header.classList.add('hidden')
+	balance.classList.remove('hidden')
+}
+
+checkSession()
