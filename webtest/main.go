@@ -11,18 +11,19 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 )
 
-// ==== НАСТРОЙ ПОД СЕБЯ ====
-const (
-	panelURL   = "https://62.60.151.8:51887/zs2NHfHyINynmWHzCP" // без слэша на конце
-	panelUser  = "zT7QncsKqD"
-	panelPass  = "3vYTG8jcFc"
-	subBaseURL = "https://62.60.151.8:2096/sub" // адрес sub-сервиса 3x-ui
+var (
+	panelURL   string
+	panelUser  string
+	panelPass  string
+	subBaseURL string
 )
 
 var inboundIDs = []int{1, 2, 3} // id инбаундов, куда добавлять клиентов
@@ -33,6 +34,19 @@ var csrfRegex = regexp.MustCompile(`<meta name="csrf-token" content="([^"]+)">`)
 var currentCSRF string
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, using system env vars")
+	}
+
+	panelURL = os.Getenv("PANEL_URL")
+	panelUser = os.Getenv("PANEL_USER")
+	panelPass = os.Getenv("PANEL_PASS")
+	subBaseURL = os.Getenv("SUB_BASE_URL")
+
+	if panelURL == "" || panelUser == "" || panelPass == "" {
+		log.Fatal("missing required env vars: PANEL_URL, PANEL_USER, PANEL_PASS")
+	}
+
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		log.Fatal(err)
