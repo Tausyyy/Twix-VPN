@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+@plugin "daisyui";
+
+html {
+	background-color: #0f1419;
+}
+
+@theme {
+	--font-main: 'Montserrat', sans-serif;
+}
+
+@font-face {
+	font-family: 'Montserrat';
+	src: url('./fonts/MontserratAlternates-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+	-webkit-box-shadow: 0 0 0 1000px #1d232a inset !important;
+	-webkit-text-fill-color: #ffffff !important;
+	caret-color: #ffffff;
+	transition: background-color 5000s ease-in-out 0s;
+}

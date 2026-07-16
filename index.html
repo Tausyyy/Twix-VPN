@@ -1,0 +1,408 @@
+<!doctype html>
+<html
+	lang="ru"
+	data-theme="dark"
+>
+	<head>
+		<meta charset="UTF-8" />
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="/favicon.svg"
+		/>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<link
+			rel="stylesheet"
+			href="style.css"
+		/>
+		<title>tailwind-practice</title>
+	</head>
+	<body class="font-main bg-[#0F1419] min-h-screen flex flex-col">
+		<header
+			class="header flex items-center justify-between px-4 h-13 border-b border-white/10"
+		>
+			<div
+				class="logo"
+				id="logo_btn"
+			>
+				<img
+					class="h-12 w-auto select-none"
+					src="images/white-logo.png"
+					alt="Twix VPN logo"
+					draggable="false"
+				/>
+			</div>
+
+			<div class="support_button">
+				<a
+					href="https://t.me/dowtu"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="border border-white/20 rounded-2xl p-2 flex items-center gap-2 text-white hover:text-gray-300 transition-all duration-300"
+				>
+					<img
+						src="images/supp_log.png"
+						alt=""
+						class="h-5 w-auto select-none"
+						draggable="false"
+					/>
+					support
+				</a>
+			</div>
+		</header>
+
+		<div class="main flex-1 flex flex-col">
+			<div
+				id="welcome"
+				class="flex-1 flex flex-col items-center justify-center gap-8 px-4"
+			>
+				<h1 class="Tailwind-title font-bold text-5xl text-white">Twix VPN</h1>
+				<p class="text-white text-center">Welcome to the Twix VPN family!</p>
+				<button
+					id="next-btn"
+					type="button"
+					class="bg-[#00D9A3] text-[#0F1419] font-bold px-10 py-3 rounded-full hover:bg-[#00c494] transition-all duration-300 shadow-[0_0_20px_rgba(0,217,163,0.3)]"
+				>
+					Sign in
+				</button>
+			</div>
+
+			<div
+				id="main"
+				class="hidden flex-1 flex flex-col items-center justify-center px-4"
+			>
+				<h2 class="text-3xl mb-10">Sign in</h2>
+
+				<form
+					class="form-submit flex flex-col gap-3 items-center w-80"
+					novalidate
+				>
+					<div
+						role="alert"
+						class="alert alert-error hidden"
+						id="email_alert"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6 shrink-0 stroke-current"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+						<span>Заполните все поля правильно!</span>
+					</div>
+					<label class="input validator w-full">
+						<svg
+							class="h-[1em] opacity-50"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<g
+								stroke-linejoin="round"
+								stroke-linecap="round"
+								stroke-width="2.5"
+								fill="none"
+								stroke="currentColor"
+							>
+								<rect
+									width="20"
+									height="16"
+									x="2"
+									y="4"
+									rx="2"
+								></rect>
+								<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+							</g>
+						</svg>
+						<input
+							type="email"
+							name="email"
+							autocomplete="email"
+							placeholder="mail@site.com"
+							required
+						/>
+					</label>
+					<div class="validator-hint hidden">Enter valid email address</div>
+
+					<label class="input validator w-full">
+						<svg
+							class="h-[1em] opacity-50"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<g
+								stroke-linejoin="round"
+								stroke-linecap="round"
+								stroke-width="2.5"
+								fill="none"
+								stroke="currentColor"
+							>
+								<path
+									d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
+								></path>
+								<circle
+									cx="16.5"
+									cy="7.5"
+									r=".5"
+									fill="currentColor"
+								></circle>
+							</g>
+						</svg>
+						<input
+							type="password"
+							name="password"
+							autocomplete="current-password"
+							required
+							placeholder="Password"
+							minlength="8"
+							pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+							title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
+						/>
+					</label>
+					<button
+						type="button"
+						class="self-end hover:text-gray-400 transition-all duration-300"
+						id="registration-btn"
+					>
+						registration
+					</button>
+					<p
+						class="validator_hint_login hidden text-red-500 text-sm mt-1"
+						id="pass_pattern_hint"
+					>
+						Must be more than 8 characters, including
+						<br />
+						At least one number
+						<br />
+						At least one lowercase letter
+						<br />
+						At least one uppercase letter
+					</p>
+					<button
+						type="submit"
+						class="btn btn-neutral w-full"
+					>
+						Join
+					</button>
+				</form>
+			</div>
+
+			<div
+				id="reg"
+				class="registration_field hidden flex-1 flex flex-col items-center justify-center px-4"
+			>
+				<h3 class="text-3xl mb-10">Regestration</h3>
+				<form
+					class="form-submit flex flex-col gap-3 items-center w-80"
+					novalidate
+				>
+					<div
+						role="alert"
+						class="alert alert-error hidden"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6 shrink-0 stroke-current"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+						<span>Заполните все поля правильно!</span>
+					</div>
+
+					<div
+						role="alert"
+						class="alert alert-error hidden"
+						id="pass_alert"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6 shrink-0 stroke-current"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+						<span>Пароли не совпадают!</span>
+					</div>
+
+					<label class="input validator w-full">
+						<svg
+							class="h-[1em] opacity-50"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<g
+								stroke-linejoin="round"
+								stroke-linecap="round"
+								stroke-width="2.5"
+								fill="none"
+								stroke="currentColor"
+							>
+								<rect
+									width="20"
+									height="16"
+									x="2"
+									y="4"
+									rx="2"
+								></rect>
+								<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+							</g>
+						</svg>
+						<input
+							type="email"
+							name="email"
+							id="email_reg"
+							autocomplete="email"
+							placeholder="mail@site.com"
+							required
+						/>
+					</label>
+					<div class="validator-hint hidden">Enter valid email address</div>
+
+					<label class="input validator w-full">
+						<svg
+							class="h-[1em] opacity-50"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<g
+								stroke-linejoin="round"
+								stroke-linecap="round"
+								stroke-width="2.5"
+								fill="none"
+								stroke="currentColor"
+							>
+								<path
+									d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
+								></path>
+								<circle
+									cx="16.5"
+									cy="7.5"
+									r=".5"
+									fill="currentColor"
+								></circle>
+							</g>
+						</svg>
+						<input
+							type="password"
+							name="password"
+							id="current_password"
+							autocomplete="current-password"
+							required
+							placeholder="Password"
+							minlength="8"
+							pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+							title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
+						/>
+					</label>
+					<p
+						class="validator_hint_reg hidden text-red-500 text-sm mt-1"
+						id="pass_pattern_hint_reg"
+					>
+						Must be more than 8 characters, including
+						<br />
+						At least one number
+						<br />
+						At least one lowercase letter
+						<br />
+						At least one uppercase letter
+					</p>
+
+					<label class="input validator w-full">
+						<svg
+							class="h-[1em] opacity-50"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<g
+								stroke-linejoin="round"
+								stroke-linecap="round"
+								stroke-width="2.5"
+								fill="none"
+								stroke="currentColor"
+							>
+								<path
+									d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
+								></path>
+								<circle
+									cx="16.5"
+									cy="7.5"
+									r=".5"
+									fill="currentColor"
+								></circle>
+							</g>
+						</svg>
+						<input
+							type="password"
+							name="repeat_password"
+							id="repeat_password"
+							autocomplete="current-password"
+							required
+							placeholder="Repeat password"
+							minlength="8"
+							pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+							title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
+						/>
+					</label>
+
+					<button
+						id="confirm_reg"
+						type="submit"
+						class="border border-black bg-black p-3 text-white mg-8 w-full"
+					>
+						Confirm
+					</button>
+				</form>
+			</div>
+
+			<div
+				class="successfull_registratio flex flex-col items-center justify-center hidden"
+				id="success_reg"
+			>
+				<h4 class="text-3xl">Вы успешно зарегестрированы!</h4>
+				<button
+					class="bg-[#00D9A3] text-[#0F1419] font-bold px-10 py-3 rounded-full hover:bg-[#00c494] transition-all duration-300 shadow-[0_0_20px_rgba(0,217,163,0.3)]"
+					id="join_btn"
+				>
+					Sign in
+				</button>
+			</div>
+
+			<div
+				class="main_window hidden flex items-center justify-center"
+				id="main_window"
+			>
+				<h5>Twix VPB</h5>
+				<p>Добро пожаловать в Twix</p>
+			</div>
+		</div>
+
+		<script src="scripts/script.js"></script>
+	</body>
+</html>
