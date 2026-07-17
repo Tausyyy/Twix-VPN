@@ -1,4 +1,6 @@
-require('dotenv').config({ path: require('path').join(__dirname, 'db', '.env') })
+require('dotenv').config({
+	path: require('path').join(__dirname, 'db', '.env')
+})
 const path = require('path')
 const crypto = require('crypto')
 const express = require('express')
@@ -15,6 +17,15 @@ if (!process.env.BOT_API_SECRET) {
 	console.error('BOT_API_SECRET не задан в backend/db/.env')
 	process.exit(1)
 }
+if (!process.env.INTERNAL_SECRET) {
+	console.error(
+		'INTERNAL_SECRET не задан в backend/db/.env (нужен для связи с Go-сервером)'
+	)
+	process.exit(1)
+}
+
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET
+const GO_BASE_URL = process.env.GO_BASE_URL || 'http://127.0.0.1:8080'
 
 const app = express()
 
@@ -39,6 +50,13 @@ app.use(
 		}
 	})
 )
+
+function requireAuth(req, res, next) {
+	if (!req.session.userId) {
+		return res.status(401).json({ error: 'Не авторизован' })
+	}
+	next()
+}
 
 app.post('/register', async (req, res) => {
 	const { email, password } = req.body
@@ -98,6 +116,61 @@ app.get('/me', (req, res) => {
 
 app.post('/logout', (req, res) => {
 	req.session.destroy(() => res.json({ message: 'Вы вышли' }))
+})
+
+// Создаёт (или возвращает уже существующую) ссылку на VPN-подписку для
+// текущего залогиненного пользователя. Ссылка выдаётся один раз на юзера -
+// повторные клики отдают тот же результат, новый клиент в панели не плодится.
+app.post('/create', requireAuth, async (req, res) => {
+	const user = db
+		.prepare('SELECT id, vpn_link FROM users WHERE id = ?')
+		.get(req.session.userId)
+
+	if (!user) {
+		return res.status(401).json({ error: 'Не авторизован' })
+	}
+
+	if (user.vpn_link) {
+		return res.json({ success: true, link: user.vpn_link })
+	}
+
+	try {
+		const controller = new AbortController()
+		const timeoutId = setTimeout(() => controller.abort(), 20000)
+
+		const goResp = await fetch(`${GO_BASE_URL}/internal/create`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Internal-Secret': INTERNAL_SECRET
+			},
+			body: JSON.stringify({ user_id: user.id }),
+			signal: controller.signal
+		})
+		clearTimeout(timeoutId)
+
+		const data = await goResp.json()
+
+		if (!goResp.ok || !data.success) {
+			return res
+				.status(502)
+				.json({ error: data.error || 'Не удалось создать подписку' })
+		}
+
+		db.prepare('UPDATE users SET vpn_link = ? WHERE id = ?').run(
+			data.link,
+			user.id
+		)
+
+		res.json({ success: true, link: data.link })
+	} catch (err) {
+		console.error('create error:', err)
+		const message =
+			err.name === 'AbortError'
+				? 'Go-сервер не отвечает (таймаут)'
+				: 'Go-сервер недоступен'
+		res.status(502).json({ error: message })
+	}
 })
 
 app.post('/api/bot/login', (req, res) => {

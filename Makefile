@@ -1,7 +1,7 @@
 # Twix / Tailwind practice — быстрый запуск
 # Windows: можно писать `make up` (есть make.cmd) или `npm start`
 
-.PHONY: help install up server front bot db-clean migrate stop
+.PHONY: help install up server front bot db-clean migrate stop go-server go-build
 
 help:
 	@echo.
@@ -12,6 +12,8 @@ help:
 	@echo    make server    - only Express :3000
 	@echo    make front     - only Vite :5173
 	@echo    make bot       - only Telegram bot
+	@echo    make go-server - only Go server (webtest) :8080
+	@echo    make go-build  - build Go server binary (webtest)
 	@echo    make db-clean  - remove junk users/tokens
 	@echo    make migrate   - DB migration (one-time)
 	@echo.
@@ -34,6 +36,12 @@ front:
 
 bot:
 	npm run bot
+
+go-server:
+	cd webtest && go run main.go
+
+go-build:
+	cd webtest && go build -o twix-vpn.exe main.go
 
 db-clean:
 	npm run db:clean

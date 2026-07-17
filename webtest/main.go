@@ -11,20 +11,23 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
 var (
-	panelURL    string
-	panelUser   string
-	panelPass   string
-	subBaseURL  string
-	frontendDir string
+	panelURL       string
+	panelUser      string
+	panelPass      string
+	subBaseURL     string
+	frontendDir    string
+	internalSecret string
 )
 
 var inboundIDs = []int{1, 2, 3} // id инбаундов, куда добавлять клиентов
@@ -44,9 +47,13 @@ func main() {
 	panelPass = os.Getenv("PANEL_PASS")
 	subBaseURL = os.Getenv("SUB_BASE_URL")
 	frontendDir = os.Getenv("FRONTEND_DIR")
+	internalSecret = os.Getenv("INTERNAL_SECRET")
 
 	if panelURL == "" || panelUser == "" || panelPass == "" {
 		log.Fatal("missing required env vars: PANEL_URL, PANEL_USER, PANEL_PASS")
+	}
+	if internalSecret == "" {
+		log.Fatal("missing required env var: INTERNAL_SECRET (must match backend/db/.env)")
 	}
 	if frontendDir == "" {
 		// webtest/ - подпапка внутри проекта, фронтенд лежит на уровень выше
@@ -61,7 +68,14 @@ func main() {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	httpClient = &http.Client{Jar: jar, Transport: tr}
+
+	// ВАЖНО: без таймаута запрос к панели может зависнуть навсегда,
+	// если панель недоступна/тормозит.
+	httpClient = &http.Client{
+		Jar:       jar,
+		Transport: tr,
+		Timeout:   15 * time.Second,
+	}
 
 	if err := panelLogin(); err != nil {
 		log.Fatal("login error: ", err)
@@ -81,11 +95,47 @@ func main() {
 	// но на всякий случай не открываем директорию целиком листингом.
 	mux.Handle("/", http.FileServer(http.Dir(frontendDir)))
 
-	mux.HandleFunc("/create", createHandler)
+	// /internal/create закрыт секретным заголовком - вызывать его может
+	// только Express (backend/server.js), а не фронт напрямую. Express сам
+	// решает, кто залогинен, и передаёт сюда только user_id.
+	mux.HandleFunc("/internal/create", recoverMiddleware(internalCreateHandler))
 
 	log.Println("Serving frontend from:", frontendDir)
 	log.Println("Server running at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
+	// Ловим Ctrl+C сами, чтобы явно видеть в логе, что это осознанная
+	// остановка, а не крах.
+	go func() {
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+		<-stop
+		log.Println("Получен сигнал остановки (Ctrl+C) - завершаю работу...")
+		os.Exit(0)
+	}()
+
+	log.Fatal(srv.ListenAndServe())
+}
+
+// recoverMiddleware ловит панику внутри хендлера и отдаёт клиенту JSON
+// с ошибкой вместо того, чтобы просто оборвать соединение.
+func recoverMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf("panic in %s: %v", r.URL.Path, rec)
+				writeJSON(w, http.StatusInternalServerError, createResponse{
+					Success: false,
+					Error:   fmt.Sprintf("internal server error: %v", rec),
+				})
+			}
+		}()
+		next(w, r)
+	}
 }
 
 // servePublicFile отдаёт конкретный файл из frontendDir/public/<name>
@@ -211,6 +261,9 @@ func addClient(email string, tgID int64) error {
 }
 
 // getClientSubID запрашивает данные клиента по email и достаёт его subId.
+// Возвращает ошибку и в случае сетевых проблем, и в случае, если клиента
+// с таким email в панели ещё нет - вызывающий код не должен различать эти
+// случаи иначе, чем "клиента пока нет, надо создать".
 func getClientSubID(email string) (string, error) {
 	req, err := http.NewRequest("GET", panelURL+"/panel/api/clients/get/"+email, nil)
 	if err != nil {
@@ -268,7 +321,7 @@ func findSubID(data interface{}) string {
 	return ""
 }
 
-// createResponse — JSON, который уходит на фронт.
+// createResponse — JSON, который уходит вызывающей стороне (Express).
 type createResponse struct {
 	Success bool   `json:"success"`
 	Link    string `json:"link,omitempty"`
@@ -281,36 +334,59 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func createHandler(w http.ResponseWriter, r *http.Request) {
+type internalCreateRequest struct {
+	UserID int64 `json:"user_id"`
+}
+
+// internalCreateHandler создаёт (или находит уже существующего) клиента в
+// 3x-ui для данного пользователя. Email детерминированный (user_<id>@twix.local),
+// поэтому повторный вызов для того же user_id НЕ создаёт нового клиента -
+// сначала всегда проверяем, нет ли его уже в панели.
+func internalCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, createResponse{Success: false, Error: "method not allowed, use POST"})
 		return
 	}
 
-	email := fmt.Sprintf("user_%s", uuid.New().String()[:8])
-	var tgID int64 = 0 // тут потом будет реальный telegram id пользователя
-
-	err := addClient(email, tgID)
-	if err != nil {
-		// возможно сессия/csrf протухли — пробуем перелогиниться и повторить один раз
-		if loginErr := panelLogin(); loginErr == nil {
-			err = addClient(email, tgID)
-		} else {
-			err = fmt.Errorf("%v (relogin also failed: %v)", err, loginErr)
-		}
-	}
-
-	if err != nil {
-		log.Println("createHandler addClient error:", err)
-		writeJSON(w, http.StatusInternalServerError, createResponse{Success: false, Error: err.Error()})
+	if r.Header.Get("X-Internal-Secret") != internalSecret {
+		writeJSON(w, http.StatusForbidden, createResponse{Success: false, Error: "forbidden"})
 		return
 	}
 
+	var req internalCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.UserID == 0 {
+		writeJSON(w, http.StatusBadRequest, createResponse{Success: false, Error: "user_id is required"})
+		return
+	}
+
+	email := fmt.Sprintf("user_%d@twix.local", req.UserID)
+
+	// 1) Сначала спрашиваем у панели: а вдруг клиент уже есть?
 	subID, err := getClientSubID(email)
 	if err != nil {
-		log.Println("createHandler getClientSubID error:", err)
-		writeJSON(w, http.StatusInternalServerError, createResponse{Success: false, Error: err.Error()})
-		return
+		// 2) Раз клиента нет (или временная сетевая ошибка) - создаём.
+		addErr := addClient(email, req.UserID)
+		if addErr != nil {
+			// возможно сессия/csrf протухли — пробуем перелогиниться и повторить один раз
+			if loginErr := panelLogin(); loginErr == nil {
+				addErr = addClient(email, req.UserID)
+			} else {
+				addErr = fmt.Errorf("%v (relogin also failed: %v)", addErr, loginErr)
+			}
+		}
+		if addErr != nil {
+			log.Println("internalCreateHandler addClient error:", addErr)
+			writeJSON(w, http.StatusInternalServerError, createResponse{Success: false, Error: addErr.Error()})
+			return
+		}
+
+		// 3) Теперь клиент точно должен существовать - забираем его subId.
+		subID, err = getClientSubID(email)
+		if err != nil {
+			log.Println("internalCreateHandler getClientSubID error:", err)
+			writeJSON(w, http.StatusInternalServerError, createResponse{Success: false, Error: err.Error()})
+			return
+		}
 	}
 
 	link := fmt.Sprintf("%s/%s", subBaseURL, subID)

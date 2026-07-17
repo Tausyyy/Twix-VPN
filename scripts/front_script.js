@@ -190,9 +190,42 @@ document.addEventListener('DOMContentLoaded', () => {
 		generateBtn.textContent = 'Создаём...'
 		resultBox.innerHTML = ''
 
+		// Таймаут, чтобы кнопка не висела вечно, если сервер/панель
+		// зависли: через 20 секунд отменяем запрос и показываем ошибку
+		// вместо бесконечного "Создаём...".
+		const controller = new AbortController()
+		const timeoutId = setTimeout(() => controller.abort(), 20000)
+
 		try {
-			const resp = await fetch('/create', { method: 'POST' })
-			const data = await resp.json()
+			const resp = await fetch('/create', {
+				method: 'POST',
+				credentials: 'include', // ВАЖНО: без этого сессия не долетит до Express
+				signal: controller.signal
+			})
+			clearTimeout(timeoutId)
+
+			if (resp.status === 401) {
+				resultBox.innerHTML = `
+          <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
+            Сессия истекла, войдите заново.
+          </div>
+        `
+				return
+			}
+
+			const text = await resp.text()
+			let data
+			try {
+				data = text ? JSON.parse(text) : null
+			} catch (parseErr) {
+				throw new Error(
+					`Сервер вернул не-JSON ответ (статус ${resp.status}): ${text.slice(0, 200)}`
+				)
+			}
+
+			if (!data) {
+				throw new Error(`Пустой ответ от сервера (статус ${resp.status})`)
+			}
 
 			if (data.success) {
 				resultBox.innerHTML = `
@@ -222,9 +255,14 @@ document.addEventListener('DOMContentLoaded', () => {
         `
 			}
 		} catch (e) {
+			clearTimeout(timeoutId)
+			const message =
+				e.name === 'AbortError'
+					? 'Сервер слишком долго не отвечает (превышен таймаут 20с). Проверь, работает ли backend.'
+					: e.message
 			resultBox.innerHTML = `
         <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
-          Ошибка запроса: ${e.message}
+          Ошибка запроса: ${message}
         </div>
       `
 		} finally {
