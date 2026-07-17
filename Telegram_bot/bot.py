@@ -10,6 +10,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.filters import CommandStart
 from aiogram import F
 from aiogram.types import Message
+from admin import router as admin_router
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -42,7 +43,7 @@ bot = Bot(token=BOT_TOKEN, session=session)
 dp = Dispatcher()
 router = Router()
 dp.include_router(router)
-
+dp.include_router(admin_router)
 
 def get_keyboard():
     keyboard = ReplyKeyboardMarkup(
@@ -125,6 +126,9 @@ async def start_handler(message: Message):
 			f"👉 обновите страницу (меню браузера - Обновить ⟳)"
 
 		)
+
+	
+
 
 async def main():
 	if TELEGRAM_PROXY:

@@ -178,6 +178,32 @@ function showMainWindow() {
 	balance.classList.remove('hidden')
 }
 
+// Копирует текст в буфер обмена. navigator.clipboard работает только в
+// "безопасном контексте" (https:// или localhost/127.0.0.1) — если сайт
+// открыт по LAN-IP (например, из-за host: true в vite.config.js) без https,
+// navigator.clipboard будет undefined, и тут используется старый fallback
+// через скрытый textarea + document.execCommand('copy').
+async function copyToClipboard(text) {
+	if (navigator.clipboard && navigator.clipboard.writeText) {
+		await navigator.clipboard.writeText(text)
+		return
+	}
+
+	const textarea = document.createElement('textarea')
+	textarea.value = text
+	textarea.style.position = 'fixed'
+	textarea.style.opacity = '0'
+	document.body.appendChild(textarea)
+	textarea.focus()
+	textarea.select()
+	const ok = document.execCommand('copy')
+	document.body.removeChild(textarea)
+
+	if (!ok) {
+		throw new Error('execCommand("copy") не сработал')
+	}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 	const generateBtn = document.getElementById('generate_link')
 	const resultBox = document.getElementById('link_result')
@@ -237,16 +263,27 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           </div>
         `
-				document
-					.getElementById('copy_link_btn')
-					.addEventListener('click', () => {
-						navigator.clipboard.writeText(data.link)
-						const copyBtn = document.getElementById('copy_link_btn')
+
+				const copyBtn = document.getElementById('copy_link_btn')
+
+				copyBtn.addEventListener('click', async () => {
+					try {
+						await copyToClipboard(data.link)
+
 						copyBtn.textContent = 'Скопировано!'
+
 						setTimeout(() => {
 							copyBtn.textContent = 'Скопировать'
 						}, 1500)
-					})
+					} catch (err) {
+						console.error('Не удалось скопировать:', err)
+						copyBtn.textContent = 'Не удалось скопировать'
+
+						setTimeout(() => {
+							copyBtn.textContent = 'Скопировать'
+						}, 1500)
+					}
+				})
 			} else {
 				resultBox.innerHTML = `
           <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
