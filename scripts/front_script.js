@@ -178,4 +178,60 @@ function showMainWindow() {
 	balance.classList.remove('hidden')
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+	const generateBtn = document.getElementById('generate_link')
+	const resultBox = document.getElementById('link_result')
+
+	if (!generateBtn) return
+
+	generateBtn.addEventListener('click', async () => {
+		generateBtn.disabled = true
+		const originalText = generateBtn.textContent
+		generateBtn.textContent = 'Создаём...'
+		resultBox.innerHTML = ''
+
+		try {
+			const resp = await fetch('/create', { method: 'POST' })
+			const data = await resp.json()
+
+			if (data.success) {
+				resultBox.innerHTML = `
+          <div class="bg-[#18222d] rounded-xl p-4">
+            <p class="text-gray-400 text-sm mb-2">Твоя ссылка на подписку:</p>
+            <div class="bg-[#0c0d0f] rounded-lg p-3 text-xs break-all font-mono mb-3" id="link_text">${data.link}</div>
+            <button id="copy_link_btn" class="w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-lg py-2 text-sm font-bold transition-all duration-300">
+              Скопировать
+            </button>
+          </div>
+        `
+				document
+					.getElementById('copy_link_btn')
+					.addEventListener('click', () => {
+						navigator.clipboard.writeText(data.link)
+						const copyBtn = document.getElementById('copy_link_btn')
+						copyBtn.textContent = 'Скопировано!'
+						setTimeout(() => {
+							copyBtn.textContent = 'Скопировать'
+						}, 1500)
+					})
+			} else {
+				resultBox.innerHTML = `
+          <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
+            Ошибка: ${data.error}
+          </div>
+        `
+			}
+		} catch (e) {
+			resultBox.innerHTML = `
+        <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
+          Ошибка запроса: ${e.message}
+        </div>
+      `
+		} finally {
+			generateBtn.disabled = false
+			generateBtn.textContent = originalText
+		}
+	})
+})
+
 checkSession()

@@ -5,13 +5,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -20,10 +20,11 @@ import (
 )
 
 var (
-	panelURL   string
-	panelUser  string
-	panelPass  string
-	subBaseURL string
+	panelURL    string
+	panelUser   string
+	panelPass   string
+	subBaseURL  string
+	frontendDir string
 )
 
 var inboundIDs = []int{1, 2, 3} // id инбаундов, куда добавлять клиентов
@@ -42,9 +43,14 @@ func main() {
 	panelUser = os.Getenv("PANEL_USER")
 	panelPass = os.Getenv("PANEL_PASS")
 	subBaseURL = os.Getenv("SUB_BASE_URL")
+	frontendDir = os.Getenv("FRONTEND_DIR")
 
 	if panelURL == "" || panelUser == "" || panelPass == "" {
 		log.Fatal("missing required env vars: PANEL_URL, PANEL_USER, PANEL_PASS")
+	}
+	if frontendDir == "" {
+		// webtest/ - подпапка внутри проекта, фронтенд лежит на уровень выше
+		frontendDir = ".."
 	}
 
 	jar, err := cookiejar.New(nil)
@@ -62,11 +68,31 @@ func main() {
 	}
 	log.Println("Logged into 3x-ui panel OK")
 
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/create", createHandler)
+	mux := http.NewServeMux()
 
+	// favicon.svg и icons.svg лежат в public/ (конвенция Vite),
+	// но в HTML на них ссылаются с корня ("/favicon.svg") -
+	// поэтому раздаём их отдельным маршрутом из public/.
+	mux.HandleFunc("/favicon.svg", servePublicFile("favicon.svg"))
+	mux.HandleFunc("/icons.svg", servePublicFile("icons.svg"))
+
+	// backend/, Telegram_bot/, node_modules и служебные файлы наружу не отдаём -
+	// FileServer раздаёт только то, на что реально есть ссылки в HTML/JS/CSS,
+	// но на всякий случай не открываем директорию целиком листингом.
+	mux.Handle("/", http.FileServer(http.Dir(frontendDir)))
+
+	mux.HandleFunc("/create", createHandler)
+
+	log.Println("Serving frontend from:", frontendDir)
 	log.Println("Server running at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", mux))
+}
+
+// servePublicFile отдаёт конкретный файл из frontendDir/public/<name>
+func servePublicFile(name string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, filepath.Join(frontendDir, "public", name))
+	}
 }
 
 // fetchCSRFToken делает GET на страницу логина, чтобы получить
@@ -242,40 +268,27 @@ func findSubID(data interface{}) string {
 	return ""
 }
 
-var indexTpl = template.Must(template.New("index").Parse(`
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>VPN test</title></head>
-<body style="font-family: sans-serif; max-width: 600px; margin: 50px auto;">
-	<h2>Тест выдачи VPN-доступа</h2>
-	<form action="/create" method="post">
-		<button type="submit" style="padding: 10px 20px; font-size: 16px;">Создать клиента</button>
-	</form>
-	{{if .Link}}
-		<p>Готово! Ссылка на подписку:</p>
-		<textarea style="width:100%; height:60px;">{{.Link}}</textarea>
-	{{end}}
-	{{if .Err}}
-		<p style="color:red;">Ошибка: {{.Err}}</p>
-	{{end}}
-</body>
-</html>
-`))
-
-type pageData struct {
-	Link string
-	Err  string
+// createResponse — JSON, который уходит на фронт.
+type createResponse struct {
+	Success bool   `json:"success"`
+	Link    string `json:"link,omitempty"`
+	Error   string `json:"error,omitempty"`
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	indexTpl.Execute(w, pageData{})
+func writeJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, createResponse{Success: false, Error: "method not allowed, use POST"})
+		return
+	}
+
 	email := fmt.Sprintf("user_%s", uuid.New().String()[:8])
 	var tgID int64 = 0 // тут потом будет реальный telegram id пользователя
-
-	data := pageData{}
 
 	err := addClient(email, tgID)
 	if err != nil {
@@ -288,17 +301,18 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		data.Err = err.Error()
-		indexTpl.Execute(w, data)
+		log.Println("createHandler addClient error:", err)
+		writeJSON(w, http.StatusInternalServerError, createResponse{Success: false, Error: err.Error()})
 		return
 	}
 
 	subID, err := getClientSubID(email)
 	if err != nil {
-		data.Err = err.Error()
-	} else {
-		data.Link = fmt.Sprintf("%s/%s", subBaseURL, subID)
+		log.Println("createHandler getClientSubID error:", err)
+		writeJSON(w, http.StatusInternalServerError, createResponse{Success: false, Error: err.Error()})
+		return
 	}
 
-	indexTpl.Execute(w, data)
+	link := fmt.Sprintf("%s/%s", subBaseURL, subID)
+	writeJSON(w, http.StatusOK, createResponse{Success: true, Link: link})
 }
