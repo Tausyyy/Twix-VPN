@@ -40,6 +40,20 @@ async function checkSession() {
 	}
 }
 
+async function refreshBalance() {
+	try {
+		const response = await fetch(`${API_BASE}/me`, {
+			credentials: 'include'
+		})
+		if (response.ok) {
+			const data = await response.json()
+			updateBalanceUI(data.user)
+		}
+	} catch (error) {
+		console.log('Не удалось обновить баланс', error)
+	}
+}
+
 document.getElementById('logo_btn').addEventListener('click', () => {
 	document.getElementById('main').classList.add('hidden')
 	document.getElementById('reg').classList.add('hidden')
@@ -212,21 +226,52 @@ async function copyToClipboard(text) {
 	}
 }
 
+// ===== Модальное окно =====
+
+const modalOverlay = document.getElementById('modal_overlay')
+const modalBox = document.getElementById('modal_box')
+const modalContent = document.getElementById('modal_content')
+
+function openModal(html) {
+	modalContent.innerHTML = html
+	modalOverlay.classList.remove('pointer-events-none')
+	requestAnimationFrame(() => {
+		modalOverlay.classList.remove('opacity-0')
+		modalBox.classList.remove('scale-95', 'opacity-0')
+	})
+}
+
+function closeModal() {
+	modalOverlay.classList.add('opacity-0')
+	modalBox.classList.add('scale-95', 'opacity-0')
+	setTimeout(() => {
+		modalOverlay.classList.add('pointer-events-none')
+		modalContent.innerHTML = ''
+	}, 300)
+}
+
+modalOverlay.addEventListener('click', e => {
+	if (e.target === modalOverlay) closeModal()
+})
+
+document.addEventListener('keydown', e => {
+	if (e.key === 'Escape') closeModal()
+})
+
+// ===== Получить ссылку =====
+
 document.addEventListener('DOMContentLoaded', () => {
 	const generateBtn = document.getElementById('generate_link')
-	const resultBox = document.getElementById('link_result')
 
 	if (!generateBtn) return
 
 	generateBtn.addEventListener('click', async () => {
-		generateBtn.disabled = true
-		const originalText = generateBtn.textContent
-		generateBtn.textContent = 'Создаём...'
-		resultBox.innerHTML = ''
+		openModal(`
+			<div class="text-center py-6">
+				<div class="text-gray-400 text-sm">Создаём ссылку...</div>
+			</div>
+		`)
 
-		// Таймаут, чтобы кнопка не висела вечно, если сервер/панель
-		// зависли: через 20 секунд отменяем запрос и показываем ошибку
-		// вместо бесконечного "Создаём...".
 		const controller = new AbortController()
 		const timeoutId = setTimeout(() => controller.abort(), 20000)
 
@@ -239,11 +284,37 @@ document.addEventListener('DOMContentLoaded', () => {
 			clearTimeout(timeoutId)
 
 			if (resp.status === 401) {
-				resultBox.innerHTML = `
-          <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
-            Сессия истекла, войдите заново.
-          </div>
-        `
+				openModal(`
+					<div class="text-center py-4">
+						<div class="text-4xl mb-3">🔒</div>
+						<h3 class="text-lg font-bold mb-2">Сессия истекла</h3>
+						<p class="text-gray-400 text-sm mb-5">Войдите заново, чтобы продолжить</p>
+						<button onclick="closeModal()" class="w-full bg-white/10 hover:bg-white/15 rounded-xl py-3 font-medium transition-colors">
+							Закрыть
+						</button>
+					</div>
+				`)
+				return
+			}
+
+			if (resp.status === 402) {
+				openModal(`
+					<div class="text-center py-4">
+						<div class="text-4xl mb-3">💳</div>
+						<h3 class="text-lg font-bold mb-2">Недостаточно средств</h3>
+						<p class="text-gray-400 text-sm mb-5">Пополните баланс, чтобы получить ссылку на подписку</p>
+						<button id="modal_topup_btn" class="w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-xl py-3 font-bold transition-colors duration-300">
+							Пополнить баланс
+						</button>
+					</div>
+				`)
+
+				document
+					.getElementById('modal_topup_btn')
+					.addEventListener('click', () => {
+						closeModal()
+						document.getElementById('topup_btn')?.click()
+					})
 				return
 			}
 
@@ -262,42 +333,49 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 
 			if (data.success) {
-				resultBox.innerHTML = `
-          <div class="bg-[#18222d] rounded-xl p-4">
-            <p class="text-gray-400 text-sm mb-2">Твоя ссылка на подписку:</p>
-            <div class="bg-[#0c0d0f] rounded-lg p-3 text-xs break-all font-mono mb-3" id="link_text">${data.link}</div>
-            <button id="copy_link_btn" class="w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-lg py-2 text-sm font-bold transition-all duration-300">
-              Скопировать
-            </button>
-          </div>
-        `
-				checkSession()
-				const copyBtn = document.getElementById('copy_link_btn')
+				openModal(`
+					<div class="text-center mb-1">
+						<div class="text-4xl mb-3">🔗</div>
+						<h3 class="text-lg font-bold mb-4">Твоя ссылка на подписку</h3>
+					</div>
+					<div class="bg-[#0c0d0f] rounded-lg p-3 text-xs break-all font-mono mb-4" id="link_text">${data.link}</div>
+					<button id="copy_link_btn" class="w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-xl py-3 font-bold transition-colors duration-300 mb-2">
+						Скопировать
+					</button>
+					<button onclick="closeModal()" class="w-full bg-white/5 hover:bg-white/10 rounded-xl py-3 font-medium transition-colors">
+						Закрыть
+					</button>
+				`)
 
+				refreshBalance()
+
+				const copyBtn = document.getElementById('copy_link_btn')
 				copyBtn.addEventListener('click', async () => {
 					try {
 						await copyToClipboard(data.link)
-
 						copyBtn.textContent = 'Скопировано!'
-
 						setTimeout(() => {
 							copyBtn.textContent = 'Скопировать'
 						}, 1500)
 					} catch (err) {
 						console.error('Не удалось скопировать:', err)
 						copyBtn.textContent = 'Не удалось скопировать'
-
 						setTimeout(() => {
 							copyBtn.textContent = 'Скопировать'
 						}, 1500)
 					}
 				})
 			} else {
-				resultBox.innerHTML = `
-          <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
-            Ошибка: ${data.error}
-          </div>
-        `
+				openModal(`
+					<div class="text-center py-4">
+						<div class="text-4xl mb-3">⚠️</div>
+						<h3 class="text-lg font-bold mb-2">Ошибка</h3>
+						<p class="text-gray-400 text-sm mb-5">${data.error}</p>
+						<button onclick="closeModal()" class="w-full bg-white/10 hover:bg-white/15 rounded-xl py-3 font-medium transition-colors">
+							Закрыть
+						</button>
+					</div>
+				`)
 			}
 		} catch (e) {
 			clearTimeout(timeoutId)
@@ -305,14 +383,16 @@ document.addEventListener('DOMContentLoaded', () => {
 				e.name === 'AbortError'
 					? 'Сервер слишком долго не отвечает (превышен таймаут 20с). Проверь, работает ли backend.'
 					: e.message
-			resultBox.innerHTML = `
-        <div class="bg-[#2a1414] border border-[#5c2626] rounded-xl p-4 text-red-400 text-sm">
-          Ошибка запроса: ${message}
-        </div>
-      `
-		} finally {
-			generateBtn.disabled = false
-			generateBtn.textContent = originalText
+			openModal(`
+				<div class="text-center py-4">
+					<div class="text-4xl mb-3">⚠️</div>
+					<h3 class="text-lg font-bold mb-2">Ошибка запроса</h3>
+					<p class="text-gray-400 text-sm mb-5">${message}</p>
+					<button onclick="closeModal()" class="w-full bg-white/10 hover:bg-white/15 rounded-xl py-3 font-medium transition-colors">
+						Закрыть
+					</button>
+				</div>
+			`)
 		}
 	})
 })
