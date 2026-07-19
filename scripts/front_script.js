@@ -19,13 +19,21 @@ function showLoggedIn() {
 	document.getElementById('main_window').classList.remove('hidden')
 }
 
+function updateBalanceUI(user) {
+	const el = document.getElementById('balance')
+	if (!el || !user) return
+	el.textContent = user.is_vip ? 'VIP' : `${user.balance} ₽`
+}
+
 async function checkSession() {
 	try {
 		const response = await fetch(`${API_BASE}/me`, {
 			credentials: 'include'
 		})
 		if (response.ok) {
+			const data = await response.json()
 			showLoggedIn()
+			updateBalanceUI(data.user)
 		}
 	} catch (error) {
 		console.error('Не удалось проверить сессию:', error)
@@ -263,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           </div>
         `
-
+				checkSession()
 				const copyBtn = document.getElementById('copy_link_btn')
 
 				copyBtn.addEventListener('click', async () => {

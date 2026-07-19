@@ -58,6 +58,14 @@ function requireAuth(req, res, next) {
 	next()
 }
 
+function isVip(telegramId) {
+	if (!telegramId) return false
+	const row = db
+		.prepare('SELECT 1 FROM vip_users WHERE telegram_id = ?')
+		.get(telegramId)
+	return !!row
+}
+
 app.post('/register', async (req, res) => {
 	const { email, password } = req.body
 
@@ -109,21 +117,31 @@ app.get('/me', (req, res) => {
 		return res.status(401).json({ error: 'Не авторизован' })
 	}
 	const user = db
-		.prepare('SELECT id, email, telegram_id FROM users WHERE id = ?')
+		.prepare('SELECT id, email, telegram_id, balance FROM users WHERE id = ?')
 		.get(req.session.userId)
-	res.json({ user })
+
+	res.json({
+		user: {
+			...user,
+			is_vip: isVip(user.telegram_id)
+		}
+	})
 })
 
 app.post('/logout', (req, res) => {
 	req.session.destroy(() => res.json({ message: 'Вы вышли' }))
 })
 
+const SUBSCRIPTION_COST = Number(process.env.SUBSCRIPTION_COST || 0)
+
 // Создаёт (или возвращает уже существующую) ссылку на VPN-подписку для
 // текущего залогиненного пользователя. Ссылка выдаётся один раз на юзера -
 // повторные клики отдают тот же результат, новый клиент в панели не плодится.
 app.post('/create', requireAuth, async (req, res) => {
 	const user = db
-		.prepare('SELECT id, vpn_link FROM users WHERE id = ?')
+		.prepare(
+			'SELECT id, telegram_id, vpn_link, balance FROM users WHERE id = ?'
+		)
 		.get(req.session.userId)
 
 	if (!user) {
@@ -132,6 +150,12 @@ app.post('/create', requireAuth, async (req, res) => {
 
 	if (user.vpn_link) {
 		return res.json({ success: true, link: user.vpn_link })
+	}
+
+	const vip = isVip(user.telegram_id)
+
+	if (!vip && user.balance < SUBSCRIPTION_COST) {
+		return res.status(402).json({ error: 'Недостаточно средств на балансе' })
 	}
 
 	try {
@@ -157,12 +181,21 @@ app.post('/create', requireAuth, async (req, res) => {
 				.json({ error: data.error || 'Не удалось создать подписку' })
 		}
 
+		if (!vip && SUBSCRIPTION_COST > 0) {
+			db.prepare('UPDATE users SET balance = balance - ? WHERE id = ?').run(
+				SUBSCRIPTION_COST,
+				user.id
+			)
+		}
+
 		db.prepare('UPDATE users SET vpn_link = ? WHERE id = ?').run(
 			data.link,
 			user.id
 		)
 
-		res.json({ success: true, link: data.link })
+		const updatedBalance = vip ? user.balance : user.balance - SUBSCRIPTION_COST
+
+		res.json({ success: true, link: data.link, balance: updatedBalance })
 	} catch (err) {
 		console.error('create error:', err)
 		const message =
@@ -202,6 +235,90 @@ app.post('/api/bot/login', (req, res) => {
 	).run(token, user.id, expiresAt)
 
 	res.json({ token })
+})
+
+app.get('/api/bot/vip', (req, res) => {
+	if (req.headers['x-bot-secret'] !== process.env.BOT_API_SECRET) {
+		return res.status(403).json({ error: 'forbidden' })
+	}
+
+	const rows = db.prepare('SELECT telegram_id FROM vip_users').all()
+	res.json({ telegram_ids: rows.map(r => r.telegram_id) })
+})
+
+app.post('/api/bot/vip', (req, res) => {
+	if (req.headers['x-bot-secret'] !== process.env.BOT_API_SECRET) {
+		return res.status(403).json({ error: 'forbidden' })
+	}
+
+	const { telegram_ids } = req.body
+	if (!Array.isArray(telegram_ids) || telegram_ids.length === 0) {
+		return res.status(400).json({ error: 'telegram_ids required' })
+	}
+
+	const insert = db.prepare(
+		'INSERT OR IGNORE INTO vip_users (telegram_id) VALUES (?)'
+	)
+	const insertMany = db.transaction(ids => {
+		for (const id of ids) insert.run(id)
+	})
+	insertMany(telegram_ids)
+
+	res.json({ success: true })
+})
+
+app.post('/api/bot/balance', (req, res) => {
+	if (req.headers['x-bot-secret'] !== process.env.BOT_API_SECRET) {
+		return res.status(403).json({ error: 'forbidden' })
+	}
+
+	const { telegram_id, amount } = req.body
+
+	if (!telegram_id || typeof amount !== 'number') {
+		return res
+			.status(400)
+			.json({ error: 'telegram_id и amount (число) обязательны' })
+	}
+
+	const user = db
+		.prepare('SELECT id, balance FROM users WHERE telegram_id = ?')
+		.get(telegram_id)
+
+	if (!user) {
+		return res
+			.status(404)
+			.json({ error: 'Пользователь с таким telegram_id не найден' })
+	}
+
+	db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(
+		amount,
+		user.id
+	)
+
+	const updated = db
+		.prepare('SELECT balance FROM users WHERE id = ?')
+		.get(user.id)
+
+	res.json({ success: true, balance: updated.balance })
+})
+
+app.post('/api/bot/vip/remove', (req, res) => {
+	if (req.headers['x-bot-secret'] !== process.env.BOT_API_SECRET) {
+		return res.status(403).json({ error: 'forbidden' })
+	}
+
+	const { telegram_ids } = req.body
+	if (!Array.isArray(telegram_ids) || telegram_ids.length === 0) {
+		return res.status(400).json({ error: 'telegram_ids required' })
+	}
+
+	const remove = db.prepare('DELETE FROM vip_users WHERE telegram_id = ?')
+	const removeMany = db.transaction(ids => {
+		for (const id of ids) remove.run(id)
+	})
+	removeMany(telegram_ids)
+
+	res.json({ success: true })
 })
 
 app.get('/auth', (req, res) => {
