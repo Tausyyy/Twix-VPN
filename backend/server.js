@@ -117,13 +117,16 @@ app.get('/me', (req, res) => {
 		return res.status(401).json({ error: 'Не авторизован' })
 	}
 	const user = db
-		.prepare('SELECT id, email, telegram_id, balance FROM users WHERE id = ?')
+		.prepare(
+			'SELECT id, email, telegram_id, balance, vpn_link FROM users WHERE id = ?'
+		)
 		.get(req.session.userId)
 
 	res.json({
 		user: {
 			...user,
-			is_vip: isVip(user.telegram_id)
+			is_vip: isVip(user.telegram_id),
+			has_subscription: !!user.vpn_link
 		}
 	})
 })
@@ -211,7 +214,7 @@ app.post('/api/bot/login', (req, res) => {
 		return res.status(403).json({ error: 'forbidden' })
 	}
 
-	const { telegram_id } = req.body
+	const { telegram_id, referred_by } = req.body
 	if (!telegram_id) {
 		return res.status(400).json({ error: 'telegram_id required' })
 	}
@@ -221,10 +224,26 @@ app.post('/api/bot/login', (req, res) => {
 		.get(telegram_id)
 
 	if (!user) {
+		const referrer = referred_by
+			? db
+					.prepare('SELECT id FROM users WHERE telegram_id = ?')
+					.get(referred_by)
+			: null
+
 		const result = db
-			.prepare('INSERT INTO users (telegram_id) VALUES (?)')
-			.run(telegram_id)
+			.prepare('INSERT INTO users (telegram_id, referred_by) VALUES (?, ?)')
+			.run(telegram_id, referrer ? referred_by : null)
+
 		user = { id: result.lastInsertRowid }
+
+		if (referrer) {
+			db.prepare('UPDATE users SET balance = balance + 50 WHERE id = ?').run(
+				referrer.id
+			)
+			db.prepare('UPDATE users SET referral_bonus_given = 1 WHERE id = ?').run(
+				user.id
+			)
+		}
 	}
 
 	const token = crypto.randomBytes(32).toString('base64url')

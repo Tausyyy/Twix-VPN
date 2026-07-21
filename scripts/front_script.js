@@ -25,20 +25,100 @@ function updateBalanceUI(user) {
 	el.textContent = user.is_vip ? 'VIP' : `${user.balance} ₽`
 }
 
+function updateUserIdUI(user) {
+	const el = document.getElementById('user_id')
+	if (!el || !user) return
+	el.textContent = user.telegram_id ? `#${user.telegram_id}` : ''
+}
+
+function updateStatusUI(user) {
+	const pill = document.getElementById('status_pill')
+	const dot = document.getElementById('status_dot')
+	const text = document.getElementById('status_text')
+	if (!pill || !dot || !text || !user) return
+
+	if (user.has_subscription) {
+		text.textContent = 'подписка активна'
+		dot.classList.remove('bg-white')
+		dot.classList.add('bg-green-400')
+		pill.classList.remove('border-[#827f85]')
+		pill.classList.add('border-green-500/40', 'text-green-300')
+	} else {
+		text.textContent = 'нет подписки'
+		dot.classList.remove('bg-green-400')
+		dot.classList.add('bg-white')
+		pill.classList.remove('border-green-500/40', 'text-green-300')
+		pill.classList.add('border-[#827f85]')
+	}
+}
+
+const BOT_USERNAME = 'VPNtwix_bot'
+let currentUser = null
+
 async function checkSession() {
 	try {
-		const response = await fetch(`${API_BASE}/me`, {
-			credentials: 'include'
-		})
+		const response = await fetch(`${API_BASE}/me`, { credentials: 'include' })
 		if (response.ok) {
 			const data = await response.json()
+			currentUser = data.user
 			showLoggedIn()
+			updateUserIdUI(data.user)
 			updateBalanceUI(data.user)
+			updateStatusUI(data.user)
 		}
 	} catch (error) {
 		console.error('Не удалось проверить сессию:', error)
 	}
 }
+
+document.getElementById('invite_btn')?.addEventListener('click', () => {
+	if (!currentUser?.telegram_id) {
+		openModal(`
+			
+			<div class="text-center py-4">
+				<div class="text-4xl mb-3">⚠️</div>
+				<h3 class="text-lg font-bold mb-2">Недоступно</h3>
+				<p class="text-gray-400 text-sm mb-5">Реферальная ссылка доступна только для пользователей, вошедших через Telegram-бота</p>
+				<button onclick="closeModal()" class="w-full bg-white/10 hover:bg-white/15 rounded-xl py-3 font-medium transition-colors">Закрыть</button>
+			</div>
+
+			`)
+
+		return
+	}
+	const refLink = `https://t.me/${BOT_USERNAME}?start=${currentUser.telegram_id}`
+
+	openModal(`
+		
+		<div class="text-center mb-1">
+			<div class="text-4xl mb-3">👥</div>
+			<h3 class="text-lg font-bold mb-2">Пригласи друга</h3>
+			<p class="text-gray-400 text-sm mb-4">Получи 50₽ на баланс, когда друг зайдёт по ссылке и зарегистрируется</p>
+			</div>
+				<div class="bg-[#0c0d0f] rounded-lg p-3 text-xs break-all font-mono mb-4">${refLink}</div>
+					<button id="copy_ref_btn" class="w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-xl py-3 font-bold transition-colors duration-300 mb-2">
+						Скопировать ссылку
+					</button>
+					<button onclick="closeModal()" class="w-full bg-white/5 hover:bg-white/10 rounded-xl py-3 font-medium transition-colors">
+						Закрыть
+					</button>
+		`)
+	const copyBtn = document.getElementById('copy_ref_btn')
+	copyBtn.addEventListener('click', async () => {
+		try {
+			await copyToClipboard(refLink)
+			copyBtn.textContent = 'Скопировано!'
+			setTimeout(() => {
+				copyBtn.textContent = 'Скопировать ссылку'
+			}, 1500)
+		} catch (err) {
+			copyBtn.textContent = 'Не удалось скопировать'
+			setTimeout(() => {
+				copyBtn.textContent = 'Скопировать ссылку'
+			}, 1500)
+		}
+	})
+})
 
 async function refreshBalance() {
 	try {
@@ -47,7 +127,9 @@ async function refreshBalance() {
 		})
 		if (response.ok) {
 			const data = await response.json()
+			updateUserIdUI(data.user)
 			updateBalanceUI(data.user)
+			updateStatusUI(data.user)
 		}
 	} catch (error) {
 		console.log('Не удалось обновить баланс', error)
