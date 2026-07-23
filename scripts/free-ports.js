@@ -4,7 +4,7 @@
  */
 const { execSync } = require('child_process')
 
-const ports = [3000, 5173, 5174, 5175]
+const ports = [3000, 5173, 5174, 5175, 8080]
 
 function pidsOnPort(port) {
 	try {

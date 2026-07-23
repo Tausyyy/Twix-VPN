@@ -214,9 +214,12 @@ type newClientPayload struct {
 		TgID       int64  `json:"tgId"`
 		LimitIP    int    `json:"limitIp"`
 		Enable     bool   `json:"enable"`
+		Flow       string `json:"flow,omitempty"`
 	} `json:"client"`
 	InboundIds []int `json:"inboundIds"`
 }
+
+const clientFlow = "xtls-rprx-vision"
 
 // addClient создаёт клиента через новый API /panel/api/clients/add.
 func addClient(email string, tgID int64) error {
@@ -228,6 +231,8 @@ func addClient(email string, tgID int64) error {
 	payload.Client.LimitIP = 0
 	payload.Client.Enable = true
 	payload.InboundIds = inboundIDs
+	payload.Client.Flow = clientFlow
+	payload.Client.Enable = true
 
 	body, _ := json.Marshal(payload)
 
