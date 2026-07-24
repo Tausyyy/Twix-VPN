@@ -72,7 +72,7 @@ function updateStatusUI(user) {
 	}
 }
 
-const BOT_USERNAME = 'VPNtwix_bot'
+const BOT_USERNAME = 'vpnbliss_bot'
 let currentUser = null
 
 async function checkSession() {
