@@ -37,6 +37,9 @@ app.use(
 )
 app.use(express.json())
 app.use(express.static(path.join(__dirname, '..', 'dist')))
+app.get('/', (req, res) => {
+	res.sendFile(path.join(__dirname, '..', 'dist', 'src.index.html'))
+})
 app.use(
 	session({
 		secret: process.env.SESSION_SECRET,
