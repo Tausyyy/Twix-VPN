@@ -23,4 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
-cookies.txt
+cookies.txt.htaccess
+backend/tmp/
+tmp/
