@@ -28,6 +28,7 @@ const INTERNAL_SECRET = process.env.INTERNAL_SECRET
 const GO_BASE_URL = process.env.GO_BASE_URL || 'http://127.0.0.1:8080'
 
 const app = express()
+app.set('trust proxy', 1)
 
 app.use(
 	cors({
@@ -53,6 +54,7 @@ app.use(
 		}
 	})
 )
+
 function verifyTelegramWebAppData(initData, botToken) {
 	const params = new URLSearchParams(initData)
 	const hash = params.get('hash')
@@ -269,41 +271,6 @@ app.post('/api/bot/login', (req, res) => {
 			)
 		}
 	}
-	app.post('/api/telegram-auth', (req, res) => {
-		const { initData } = req.body
-		if (!initData) {
-			return res.status(400).json({ error: 'initData required' })
-		}
-
-		if (!verifyTelegramWebAppData(initData, process.env.BOT_TOKEN)) {
-			return res.status(403).json({ error: 'invalid initData' })
-		}
-
-		const params = new URLSearchParams(initData)
-		const userJson = params.get('user')
-		if (!userJson) {
-			return res.status(400).json({ error: 'no user data' })
-		}
-
-		const tgUser = JSON.parse(userJson)
-		const telegram_id = tgUser.id
-
-		let user = db
-			.prepare('SELECT id FROM users WHERE telegram_id = ?')
-			.get(telegram_id)
-		if (!user) {
-			const result = db
-				.prepare('INSERT INTO users (telegram_id) VALUES (?)')
-				.run(telegram_id)
-			user = { id: result.lastInsertRowid }
-		}
-
-		req.session.userId = user.id
-		req.session.save(err => {
-			if (err) console.error('Session save error:', err)
-			res.json({ success: true })
-		})
-	})
 
 	const token = crypto.randomBytes(32).toString('base64url')
 	const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
@@ -313,6 +280,42 @@ app.post('/api/bot/login', (req, res) => {
 	).run(token, user.id, expiresAt)
 
 	res.json({ token })
+})
+
+app.post('/api/telegram-auth', (req, res) => {
+	const { initData } = req.body
+	if (!initData) {
+		return res.status(400).json({ error: 'initData required' })
+	}
+
+	if (!verifyTelegramWebAppData(initData, process.env.BOT_TOKEN)) {
+		return res.status(403).json({ error: 'invalid initData' })
+	}
+
+	const params = new URLSearchParams(initData)
+	const userJson = params.get('user')
+	if (!userJson) {
+		return res.status(400).json({ error: 'no user data' })
+	}
+
+	const tgUser = JSON.parse(userJson)
+	const telegram_id = tgUser.id
+
+	let user = db
+		.prepare('SELECT id FROM users WHERE telegram_id = ?')
+		.get(telegram_id)
+	if (!user) {
+		const result = db
+			.prepare('INSERT INTO users (telegram_id) VALUES (?)')
+			.run(telegram_id)
+		user = { id: result.lastInsertRowid }
+	}
+
+	req.session.userId = user.id
+	req.session.save(err => {
+		if (err) console.error('Session save error:', err)
+		res.json({ success: true })
+	})
 })
 
 app.get('/api/bot/vip', (req, res) => {
