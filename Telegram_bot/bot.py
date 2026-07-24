@@ -20,7 +20,7 @@ from aiogram.types import (
 )
 from admin import router as admin_router
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-
+from aiogram.types import MenuButtonWebApp, WebAppInfo
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -197,6 +197,9 @@ async def main():
 	# Не роняем весь main: если Telegram недоступен — пробуем снова
 	while True:
 		try:
+			await bot.set_chat_menu_button(
+	menu_button=MenuButtonWebApp(text="Кабинет", web_app=WebAppInfo(url=SITE_URL))
+)
 			await dp.start_polling(bot)
 			break
 		except Exception:

@@ -53,6 +53,27 @@ app.use(
 		}
 	})
 )
+function verifyTelegramWebAppData(initData, botToken) {
+	const params = new URLSearchParams(initData)
+	const hash = params.get('hash')
+	params.delete('hash')
+
+	const dataCheckArr = [...params.entries()]
+		.sort((a, b) => a[0].localeCompare(b[0]))
+		.map(([key, value]) => `${key}=${value}`)
+	const dataCheckString = dataCheckArr.join('\n')
+
+	const secretKey = crypto
+		.createHmac('sha256', 'WebAppData')
+		.update(botToken)
+		.digest()
+	const computedHash = crypto
+		.createHmac('sha256', secretKey)
+		.update(dataCheckString)
+		.digest('hex')
+
+	return computedHash === hash
+}
 
 function requireAuth(req, res, next) {
 	if (!req.session.userId) {
@@ -248,6 +269,41 @@ app.post('/api/bot/login', (req, res) => {
 			)
 		}
 	}
+	app.post('/api/telegram-auth', (req, res) => {
+		const { initData } = req.body
+		if (!initData) {
+			return res.status(400).json({ error: 'initData required' })
+		}
+
+		if (!verifyTelegramWebAppData(initData, process.env.BOT_TOKEN)) {
+			return res.status(403).json({ error: 'invalid initData' })
+		}
+
+		const params = new URLSearchParams(initData)
+		const userJson = params.get('user')
+		if (!userJson) {
+			return res.status(400).json({ error: 'no user data' })
+		}
+
+		const tgUser = JSON.parse(userJson)
+		const telegram_id = tgUser.id
+
+		let user = db
+			.prepare('SELECT id FROM users WHERE telegram_id = ?')
+			.get(telegram_id)
+		if (!user) {
+			const result = db
+				.prepare('INSERT INTO users (telegram_id) VALUES (?)')
+				.run(telegram_id)
+			user = { id: result.lastInsertRowid }
+		}
+
+		req.session.userId = user.id
+		req.session.save(err => {
+			if (err) console.error('Session save error:', err)
+			res.json({ success: true })
+		})
+	})
 
 	const token = crypto.randomBytes(32).toString('base64url')
 	const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()

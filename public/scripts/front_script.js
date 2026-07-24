@@ -31,6 +31,26 @@ function updateUserIdUI(user) {
 	el.textContent = user.telegram_id ? `#${user.telegram_id}` : ''
 }
 
+async function initTelegramAuth() {
+	const tg = window.Telegram?.WebApp
+	if (!tg || !tg.initData) return false
+
+	tg.ready()
+	tg.expand()
+
+	try {
+		const resp = await fetch('/api/telegram-auth', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify({ initData: tg.initData })
+		})
+		return resp.ok
+	} catch (e) {
+		console.error('Telegram auth failed:', e)
+		return false
+	}
+}
 function updateStatusUI(user) {
 	const pill = document.getElementById('status_pill')
 	const dot = document.getElementById('status_dot')
@@ -478,5 +498,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	})
 })
-
-checkSession()
+;(async () => {
+	if (window.Telegram?.WebApp?.initData) {
+		await initTelegramAuth()
+	}
+	checkSession()
+})()
