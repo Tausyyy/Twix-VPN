@@ -349,6 +349,14 @@ app.get('/auth', (req, res) => {
 		return res.status(400).send('Ссылка недействительна или истекла')
 	}
 
+	// Telegram делает служебный запрос для генерации превью ссылки в чате -
+	// не должен "сжигать" токен, иначе реальный клик пользователя получит
+	// уже использованную ссылку.
+	const userAgent = req.headers['user-agent'] || ''
+	if (userAgent.includes('TelegramBot')) {
+		return res.status(200).send('Twix VPN')
+	}
+
 	const row = db
 		.prepare(
 			'SELECT user_id, expires_at, used FROM login_tokens WHERE token = ?'
@@ -362,7 +370,6 @@ app.get('/auth', (req, res) => {
 	db.prepare('UPDATE login_tokens SET used = 1 WHERE token = ?').run(token)
 
 	req.session.userId = row.user_id
-	// на тот же origin (через Vite proxy) — фронт сам откроет кабинет по /me
 	res.redirect('/')
 })
 
