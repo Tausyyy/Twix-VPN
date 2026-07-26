@@ -106,13 +106,14 @@ func main() {
 	mux.HandleFunc("/internal/create", recoverMiddleware(internalCreateHandler))
 
 	log.Println("Serving frontend from:", frontendDir)
-	log.Println("Server running at http://localhost:8080")
+
+
+	log.Println("Server running at http://localhost:" + port)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: mux,
 	}
-
 	// Ловим Ctrl+C сами, чтобы явно видеть в логе, что это осознанная
 	// остановка, а не крах.
 	go func() {
