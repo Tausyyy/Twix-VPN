@@ -12,7 +12,7 @@ const API_BASE = ''
 let currentUser = null
 
 function hideAllScreens() {
-	;['welcome', 'main_window'].forEach(id => {
+	;['landing', 'main_window'].forEach(id => {
 		document.getElementById(id)?.classList.add('hidden')
 	})
 }
@@ -26,7 +26,7 @@ function showLoggedIn() {
 
 function showWelcome() {
 	hideAllScreens()
-	document.getElementById('welcome')?.classList.remove('hidden')
+	document.getElementById('landing')?.classList.remove('hidden')
 	const header = document.getElementById('header')
 	if (header) header.classList.remove('hidden')
 }
