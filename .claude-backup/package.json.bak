@@ -1,0 +1,36 @@
+{
+	"name": "tailwind-practice",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"prestart": "node scripts/free-ports.js",
+		"start": "concurrently -n api,web,bot,go -c blue,green,magenta,yellow \"npm run server\" \"npm run front\" \"npm run bot\" \"npm run go\"",
+		"start:web": "concurrently -n api,web,go -c blue,green,yellow \"npm run server\" \"npm run front\" \"npm run go\"",
+		"dev": "vite",
+		"front": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"server": "node scripts/run-server.js",
+		"go": "cd webtest && go run main.go",
+		"bot": ".venv\\Scripts\\python.exe Telegram_bot\\bot.py",
+		"migrate": "node backend/db/migrate.js",
+		"db:clean": "node scripts/run-clean.js",
+		"free-ports": "node scripts/free-ports.js"
+	},
+	"devDependencies": {
+		"concurrently": "^9.2.4",
+		"daisyui": "^5.6.10",
+		"vite": "^8.1.1"
+	},
+	"dependencies": {
+		"@tailwindcss/vite": "^4.3.2",
+		"bcrypt": "^6.0.0",
+		"better-sqlite3": "^12.11.1",
+		"cors": "^2.8.6",
+		"dotenv": "^17.4.2",
+		"express": "^5.2.1",
+		"express-session": "^1.19.0",
+		"sqlite3": "^6.0.1",
+		"tailwindcss": "^4.3.2"
+	}
+}

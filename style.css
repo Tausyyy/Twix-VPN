@@ -1,10 +1,6 @@
 @import 'tailwindcss';
 @plugin "daisyui";
 
-html {
-	background-color: #0f1419;
-}
-
 @theme {
 	--font-main: 'Montserrat', sans-serif;
 }
@@ -15,6 +11,11 @@ html {
 	font-weight: 700;
 	font-style: normal;
 	font-display: swap;
+}
+
+html {
+	scroll-behavior: smooth;
+	overflow-x: hidden;
 }
 
 input:-webkit-autofill,
@@ -42,12 +43,12 @@ input:-webkit-autofill:active {
 }
 
 .spinner {
-	width: 50px;
-	height: 50px;
-	border: 5px solid #f3f3f3;
-	border-top: 5px solid #3498db;
+	width: clamp(40px, 8vw, 50px);
+	height: clamp(40px, 8vw, 50px);
+	border: clamp(3px, 0.6vw, 5px) solid #f3f3f3;
+	border-top: clamp(3px, 0.6vw, 5px) solid #3498db;
 	border-radius: 50%;
-	animation: spin 2s linear infinite;
+	animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -55,20 +56,31 @@ input:-webkit-autofill:active {
 		transform: rotate(0deg);
 	}
 	100% {
-		transform: rotate(3deg);
+		transform: rotate(360deg);
 	}
 }
 
-#link_result {
-	overflow: hidden;
-	max-height: 0;
-	opacity: 0;
-	transition:
-		max-height 0.35s ease,
-		opacity 0.25s ease;
+html,
+body {
+	scrollbar-width: thin !important;
+	scrollbar-color: #27272a #08090b !important;
 }
 
-#link_result.open {
-	max-height: 400px;
-	opacity: 1;
+::-webkit-scrollbar {
+	width: 10px !important;
+	height: 10px !important;
+}
+
+::-webkit-scrollbar-track {
+	background: #08090b !important;
+}
+
+::-webkit-scrollbar-thumb {
+	background: #27272a !important;
+	border-radius: 9999px !important;
+	border: 2px solid #08090b !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: #3f3f46 !important;
 }
