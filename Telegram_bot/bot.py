@@ -165,7 +165,7 @@ async def process_check_sub(callback: CallbackQuery, bot: Bot):
 
 @router.message(F.text == "📖 Помощь")
 async def help_button(message: Message):
-	await message.answer("🆘 Помощь:\n\nЕсли возникли проблемы — напишите @dowtu.")
+	await message.answer("🆘 Помощь:\n\nЕсли возникли проблемы — создайте тикет в боте: @BlissSupport_bot.")
 
 
 @router.message(F.text == "🔐 Личный кабинет")
