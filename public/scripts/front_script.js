@@ -282,10 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	const generateBtn = document.getElementById('generate_link')
 	if (!generateBtn) return
 
-	generateBtn.addEventListener('click', async () => {
+	async function createLink(force = false) {
 		openModal(`
 			<div class="text-center py-6">
-				<div class="text-gray-400 text-sm">Создаём ссылку...</div>
+				<div class="text-gray-400 text-sm">${force ? 'Пересоздаём ссылку...' : 'Создаём ссылку...'}</div>
 			</div>
 		`)
 
@@ -295,7 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		try {
 			const resp = await fetch('/create', {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				credentials: 'include',
+				body: JSON.stringify({ force }),
 				signal: controller.signal
 			})
 			clearTimeout(timeoutId)
@@ -341,6 +343,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			if (!data) {
 				throw new Error(`Пустой ответ от сервера (статус ${resp.status})`)
+			}
+
+			if (data.success && data.exists && !force) {
+				openModal(`
+					<div class="text-center mb-1">
+						<div class="text-4xl mb-3">🔗</div>
+						<h3 class="text-lg font-bold mb-2">У вас уже есть ссылка</h3>
+						<p class="text-gray-400 text-sm mb-4">Если старая ссылка не работает — пересоздайте её.</p>
+					</div>
+					<div class="bg-[#0c0d0f] rounded-lg p-3 text-xs break-all font-mono mb-4" id="link_text">${data.link}</div>
+					<button id="recreate_link_btn" class="w-full bg-pink-500 hover:bg-pink-400 rounded-xl py-3 font-bold transition-colors duration-300 mb-2">
+						Пересоздать ссылку
+					</button>
+					<button id="copy_link_btn" class="w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-xl py-3 font-bold transition-colors duration-300 mb-2">
+						Скопировать
+					</button>
+					<button onclick="closeModal()" class="w-full bg-white/5 hover:bg-white/10 rounded-xl py-3 font-medium transition-colors">
+						Закрыть
+					</button>
+				`)
+
+				document.getElementById('recreate_link_btn')?.addEventListener('click', () => {
+					createLink(true)
+				})
+
+				const copyBtn = document.getElementById('copy_link_btn')
+				copyBtn?.addEventListener('click', async () => {
+					try {
+						await copyToClipboard(data.link)
+						copyBtn.textContent = 'Скопировано!'
+					} catch (err) {
+						console.error('Не удалось скопировать:', err)
+						copyBtn.textContent = 'Не удалось скопировать'
+					}
+					setTimeout(() => {
+						copyBtn.textContent = 'Скопировать'
+					}, 1500)
+				})
+				return
 			}
 
 			if (data.success) {
@@ -398,7 +439,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				</div>
 			`)
 		}
-	})
+	}
+
+	generateBtn.addEventListener('click', () => createLink(false))
 })
 
 // ===== Top up =====

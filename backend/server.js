@@ -177,8 +177,10 @@ app.post('/create', requireAuth, async (req, res) => {
 		return res.status(401).json({ error: 'Не авторизован' })
 	}
 
-	if (user.vpn_link) {
-		return res.json({ success: true, link: user.vpn_link })
+	const forceRecreate = req.body?.force === true
+
+	if (user.vpn_link && !forceRecreate) {
+		return res.json({ success: true, link: user.vpn_link, exists: true })
 	}
 
 	const vip = isVip(user.telegram_id)
