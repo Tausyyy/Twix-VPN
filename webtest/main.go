@@ -49,6 +49,11 @@ func main() {
 	frontendDir = os.Getenv("FRONTEND_DIR")
 	internalSecret = os.Getenv("INTERNAL_SECRET")
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	if panelURL == "" || panelUser == "" || panelPass == "" {
 		log.Fatal("missing required env vars: PANEL_URL, PANEL_USER, PANEL_PASS")
 	}
@@ -101,13 +106,14 @@ func main() {
 	mux.HandleFunc("/internal/create", recoverMiddleware(internalCreateHandler))
 
 	log.Println("Serving frontend from:", frontendDir)
-	log.Println("Server running at http://localhost:8080")
+
+
+	log.Println("Server running at http://localhost:" + port)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: mux,
 	}
-
 	// Ловим Ctrl+C сами, чтобы явно видеть в логе, что это осознанная
 	// остановка, а не крах.
 	go func() {
