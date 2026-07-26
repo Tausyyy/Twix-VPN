@@ -140,682 +140,705 @@
 			id="main"
 			class="flex-1 relative z-10 w-full"
 		>
-			<div id="landing" class="contents">
-			<section
-				id="welcome"
-				class="flex min-h-[calc(100vh-64px)] items-center"
+			<div
+				id="landing"
+				class="contents"
 			>
-				<div
-					class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
-				>
-					<div class="max-w-3xl text-center">
-						<h1
-							class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tighter mt-20"
-						>
-							<span
-								class="inline-block px-[0.05em] bg-gradient-to-r from-white via-[#ff84c2] to-[#ff4d9d] bg-clip-text text-transparent"
-							>
-								Bliss
-							</span>
-							<br />
-							<span class="text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-400">
-								Шифрование. Скорость. Тишина.
-							</span>
-						</h1>
-
-						<p
-							class="mx-auto mt-6 max-w-2xl text-base leading-7 text-gray-400 sm:text-lg"
-						>
-							VLESS / Reality протокол. Стабильная скорость, без логов, без
-							рекламы. Подключение в один тап — прямо из Telegram.
-						</p>
-
-						<div
-							class="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center"
-						>
-							<a
-								href="https://t.me/vpnbliss_bot"
-								target="_blank"
-								rel="noopener noreferrer"
-								class="inline-block rounded-xl bg-white px-7 py-4 font-medium text-black transition hover:bg-gray-200"
-							>
-								Открыть в Telegram
-							</a>
-
-							<a
-								href="#connection"
-								class="rounded-xl border border-white/10 bg-[#0d0e11] px-7 py-4 transition hover:bg-[#17191d]"
-							>
-								Как это работает?
-							</a>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<!-- FEATURES -->
-			<section class="flex min-h-[calc(100vh-64px)] items-center py-10">
-				<div
-					class="container mx-auto max-w-6xl px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+				<section
+					id="welcome"
+					class="flex min-h-[calc(100vh-64px)] items-center"
 				>
 					<div
-						class="flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] hover:border-blue-500/15 transition-all duration-300"
+						class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
 					>
-						<div
-							class="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400"
-						>
-							<span class="text-xl">⬡</span>
-						</div>
-						<div class="flex flex-col gap-2">
-							<h3 class="text-lg font-semibold text-white tracking-wide">
-								Reality протокол
-							</h3>
-							<p class="text-sm text-gray-400 leading-relaxed">
-								Современный TLS-трафик с настоящим SNI. Соединение неотличимо от
-								обычного HTTPS-сайта.
-							</p>
-						</div>
-					</div>
-
-					<div
-						class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-green-500/15 hover:shadow-[0_0_25px_rgba(0,148,79,0.3)] transition-all duration-300"
-					>
-						<div
-							class="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-						>
-							<span class="text-xl">🌐</span>
-						</div>
-						<div class="flex flex-col gap-2">
-							<h3 class="text-lg font-semibold text-white tracking-wide">
-								Без логов
-							</h3>
-							<p class="text-sm text-gray-400 leading-relaxed">
-								Мы не храним историю подключений, не пишем DNS-запросы, не
-								продаём данные.
-							</p>
-						</div>
-					</div>
-
-					<div
-						class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:border-orange-500/15 hover:shadow-[0_0_25px_rgba(249,115,22,0.25)] hover:bg-[#08090b] transition-all duration-300"
-					>
-						<div
-							class="flex items-center justify-center w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400"
-						>
-							<span class="text-xl">⚡</span>
-						</div>
-						<div class="flex flex-col gap-2">
-							<h3 class="text-lg font-semibold text-white tracking-wide">
-								Скорость без потерь
-							</h3>
-							<p class="text-sm text-gray-400 leading-relaxed">
-								XTLS-Vision снижает CPU-нагрузку на сервере. Видео в 4K, gaming
-								без лагов.
-							</p>
-						</div>
-					</div>
-
-					<div
-						class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-pink-500/15 hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] transition-all duration-300"
-					>
-						<div
-							class="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400"
-						>
-							<span class="text-xl">🕒</span>
-						</div>
-						<div class="flex flex-col gap-2">
-							<h3 class="text-lg font-semibold text-white tracking-wide">
-								Подключение за 30 секунд
-							</h3>
-							<p class="text-sm text-gray-400 leading-relaxed">
-								Один тап в Telegram. Скопируй ссылку, вставь в Happ. Готово.
-							</p>
-						</div>
-					</div>
-
-					<div
-						class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-blue-500/15 hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] transition-all duration-300"
-					>
-						<div
-							class="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-400/10 border border-blue-400/20 text-blue-400"
-						>
-							<span class="text-xl">📱</span>
-						</div>
-						<div class="flex flex-col gap-2">
-							<h3 class="text-lg font-semibold text-white tracking-wide">
-								Все платформы
-							</h3>
-							<p class="text-sm text-gray-400 leading-relaxed">
-								iOS, Android, macOS, Windows. Одна подписка — все устройства.
-							</p>
-						</div>
-					</div>
-
-					<div
-						class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-green-500/15 hover:shadow-[0_0_25px_rgba(0,148,79,0.3)] transition-all duration-300"
-					>
-						<div
-							class="flex items-center justify-center w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400"
-						>
-							<span class="text-xl">🔒</span>
-						</div>
-						<div class="flex flex-col gap-2">
-							<h3 class="text-lg font-semibold text-white tracking-wide">
-								Оплата как удобно
-							</h3>
-							<p class="text-sm text-gray-400 leading-relaxed">
-								СБП, банковские карты, Telegram Stars, криптовалюта. Без
-								подписок — плати когда хочешь.
-							</p>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<!-- CONNECTION STEPS -->
-			<section
-				id="connection"
-				class="w-full pt-16 pb-24"
-			>
-				<div
-					class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
-				>
-					<div class="max-w-3xl text-center mb-12">
-						<h2
-							class="text-3xl sm:text-4xl font-bold leading-tight tracking-tighter text-white"
-						>
-							Три шага до приватности
-						</h2>
-					</div>
-
-					<div class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6">
-						<div
-							class="relative overflow-hidden flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-6 hover:border-gray-500 transition-all duration-300"
-						>
-							<span
-								class="absolute right-2 sm:-right-4 lg:-right-6 top-2 sm:-top-4 lg:-top-6 text-[clamp(64px,12vw,160px)] font-bold text-pink-400/[0.05] leading-none select-none pointer-events-none z-0"
+						<div class="max-w-3xl text-center">
+							<h1
+								class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tighter mt-20"
 							>
-								1
-							</span>
-							<div class="relative z-10 flex flex-col gap-4 w-full">
-								<div
-									class="flex items-center justify-center w-12 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-sm"
-								>
-									01
-								</div>
-								<div class="flex flex-col gap-2">
-									<h3 class="text-xl font-bold text-white tracking-wide">
-										Откройте Telegram-бота
-									</h3>
-									<p class="text-sm text-gray-400 leading-relaxed">
-										Нажмите кнопку ниже — откроется наш бот в Telegram. Если
-										бота нет — устанавливать ничего не нужно.
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div
-							class="relative overflow-hidden flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-6 hover:border-gray-500 transition-all duration-300"
-						>
-							<span
-								class="absolute right-2 sm:-right-4 lg:-right-6 top-2 sm:-top-4 lg:-top-6 text-[clamp(64px,12vw,160px)] font-bold text-pink-400/[0.05] leading-none select-none pointer-events-none z-0"
-							>
-								2
-							</span>
-							<div class="relative z-10 flex flex-col gap-4 w-full">
-								<div
-									class="flex items-center justify-center w-12 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-sm"
-								>
-									02
-								</div>
-								<div class="flex flex-col gap-2">
-									<h3 class="text-xl font-bold text-white tracking-wide">
-										Выберите тариф
-									</h3>
-									<p class="text-sm text-gray-400 leading-relaxed">
-										Первые 3 дня — бесплатно. Дальше — от 100₽ в месяц. Оплата
-										картой, СБП или Stars.
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div
-							class="relative overflow-hidden flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-6 hover:border-gray-500 transition-all duration-300"
-						>
-							<span
-								class="absolute right-2 sm:-right-4 lg:-right-6 top-2 sm:-top-4 lg:-top-6 text-[clamp(64px,12vw,160px)] font-bold text-pink-400/[0.05] leading-none select-none pointer-events-none z-0"
-							>
-								3
-							</span>
-							<div class="relative z-10 flex flex-col gap-4 w-full">
-								<div
-									class="flex items-center justify-center w-12 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-sm"
-								>
-									03
-								</div>
-								<div class="flex flex-col gap-2">
-									<h3 class="text-xl font-bold text-white tracking-wide">
-										Подключитесь через Happ
-									</h3>
-									<p class="text-sm text-gray-400 leading-relaxed">
-										Скачайте бесплатный клиент Happ → скопируйте ссылку из бота
-										→ один тап и вы подключены.
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="flex justify-center w-full mt-12">
-						<a
-							href="https://t.me/vpnbliss_bot"
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center justify-center gap-2 border bg-white text-black font-semibold rounded-2xl px-6 py-2.5 text-sm hover:bg-gray-100 transition-colors"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="2"
-								stroke="currentColor"
-								class="w-4 h-4"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-								/>
-							</svg>
-							<span>Начать</span>
-						</a>
-					</div>
-				</div>
-			</section>
-
-			<!-- RATES -->
-			<section
-				id="rates"
-				class="w-full pt-16 pb-24"
-			>
-				<div
-					class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
-				>
-					<div class="max-w-3xl text-center mb-20">
-						<h2
-							class="text-3xl sm:text-4xl lg:text-5xl mt-10 leading-tight tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-400"
-						>
-							Чем дольше — тем выгоднее
-						</h2>
-						<p class="mt-3 text-[#99a1af]">
-							Никаких автосписаний. Платите за тот период, который нужен.
-						</p>
-					</div>
-
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-						<div
-							class="flex flex-col gap-4 rounded-2xl border border-white/5 bg-[#131316] p-6 hover:bg-[#08090b] hover:border-white/10 transition-all duration-300"
-						>
-							<span class="text-xs font-semibold tracking-wider text-gray-500">
-								1 МЕСЯЦ
-							</span>
-							<div class="flex items-baseline gap-1">
-								<span class="text-4xl sm:text-5xl font-bold text-white">
-									100
-								</span>
-								<span class="text-2xl font-bold text-gray-500">₽</span>
-							</div>
-							<span class="text-sm text-gray-400">100 ₽ / мес.</span>
-							<div class="border-t border-white/5 pt-4 flex flex-col gap-3">
-								<div class="flex items-center gap-2.5">
-									<span
-										class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
-									>
-										●
-									</span>
-									<span class="text-sm text-gray-300">Все регионы</span>
-								</div>
-								<div class="flex items-center gap-2.5">
-									<span
-										class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
-									>
-										●
-									</span>
-									<span class="text-sm text-gray-300">Безлимитный трафик</span>
-								</div>
-								<div class="flex items-center gap-2.5">
-									<span
-										class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
-									>
-										●
-									</span>
-									<span class="text-sm text-gray-300">Поддержка 24/7</span>
-								</div>
-							</div>
-						</div>
-
-						<div
-							class="relative flex flex-col gap-4 rounded-2xl border border-pink-500/30 bg-[#131316] p-6 transition-all duration-300 shadow-[0_0_60px_10px_rgba(236,72,153,0.35),0_0_20px_rgba(236,72,153,0.4)]"
-						>
-							<span
-								class="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-full bg-pink-500/30 text-white"
-							>
-								⚡ ВЫГОДНО
-							</span>
-							<span class="text-xs font-semibold tracking-wider text-gray-500">
-								3 МЕСЯЦА
-							</span>
-							<div class="flex items-baseline gap-1">
-								<span class="text-4xl sm:text-5xl font-bold text-white">
-									245
-								</span>
-								<span class="text-2xl font-bold text-gray-500">₽</span>
-							</div>
-							<div class="flex items-center gap-2">
-								<span class="text-sm text-gray-400">81 ₽ / мес.</span>
 								<span
-									class="text-xs font-semibold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md"
+									class="inline-block px-[0.05em] bg-gradient-to-r from-white via-[#ff84c2] to-[#ff4d9d] bg-clip-text text-transparent"
 								>
-									-31%
+									Bliss
 								</span>
-							</div>
-							<div class="border-t border-white/5 pt-4 flex flex-col gap-3">
-								<div class="flex items-center gap-2.5">
-									<span
-										class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
-									>
-										●
-									</span>
-									<span class="text-sm text-gray-300">Все регионы</span>
-								</div>
-								<div class="flex items-center gap-2.5">
-									<span
-										class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
-									>
-										●
-									</span>
-									<span class="text-sm text-gray-300">Безлимитный трафик</span>
-								</div>
-								<div class="flex items-center gap-2.5">
-									<span
-										class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
-									>
-										●
-									</span>
-									<span class="text-sm text-gray-300">До 5 устройств</span>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="flex justify-center w-full mt-12">
-						<a
-							href="https://t.me/vpnbliss_bot"
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center justify-center gap-2 border bg-white text-black font-semibold rounded-2xl p-3 text-sm hover:bg-gray-100 transition-colors"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="2"
-								stroke="currentColor"
-								class="w-4 h-4"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-								/>
-							</svg>
-							<span>Купить через Telegram</span>
-						</a>
-					</div>
-					<p class="mt-3 text-xs text-[#535354] text-center px-4">
-						Или попробуйте
-						<span class="text-pink-400 font-medium">3 дня бесплатно</span>
-						— без привязки карты
-					</p>
-				</div>
-			</section>
-
-			<!-- FAQ -->
-			<section
-				id="FAQ"
-				class="w-full pt-16 pb-24"
-			>
-				<div
-					class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
-				>
-					<h2 class="text-3xl sm:text-4xl lg:text-5xl text-white text-center">
-						Что нужно знать
-					</h2>
-
-					<div class="w-full max-w-2xl space-y-4 mt-10">
-						<div
-							class="accordion rounded-2xl border border-[#2c2430] bg-[#121217] overflow-hidden"
-						>
-							<button
-								class="accordion-btn w-full flex items-center justify-between p-3 text-left"
-							>
-								<span class="text-white text-sm font-semibold pr-4">
-									Что такое VLESS и Reality?
-								</span>
-								<div
-									class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
+								<br />
+								<span
+									class="text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-400"
 								>
-									+
-								</div>
-							</button>
-							<div
-								class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
-							>
-								<div class="overflow-hidden">
-									<div class="px-6 pb-6 text-sm text-gray-400 leading-relaxed">
-										VLESS — современный протокол шифрования. Reality —
-										технология, позволяющая маскировать VPN-трафик под обычный
-										HTTPS.
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div
-							class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
-						>
-							<button
-								class="accordion-btn w-full flex items-center justify-between p-3 text-left"
-							>
-								<span class="text-white text-sm font-semibold pr-4">
-									Нужен ли Telegram?
+									Шифрование. Скорость. Тишина.
 								</span>
-								<div
-									class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
-								>
-									+
-								</div>
-							</button>
-							<div
-								class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
-							>
-								<div class="overflow-hidden">
-									<div class="px-6 pb-6 text-sm text-gray-400 leading-relaxed">
-										Да — управление подпиской и оплата происходят через нашего
-										бота. Сам VPN работает в отдельном приложении Happ
-										независимо от Telegram.
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div
-							class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
-						>
-							<button
-								class="accordion-btn w-full flex items-center justify-between p-3 text-left"
-							>
-								<span class="text-white text-sm font-semibold pr-4">
-									Что с логами?
-								</span>
-								<div
-									class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
-								>
-									+
-								</div>
-							</button>
-							<div
-								class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
-							>
-								<div class="overflow-hidden">
-									<div class="px-6 pb-6 text-sm text-gray-400 leading-relaxed">
-										Не храним. Мы не пишем историю подключений, не логируем
-										DNS-запросы, не сотрудничаем с рекламными сетями.
-										Зашифрованный туннель — единственное, что мы поддерживаем.
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div
-							class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
-						>
-							<button
-								class="accordion-btn w-full flex items-center justify-between p-3 text-left"
-							>
-								<span class="text-white text-sm font-semibold pr-4">
-									Есть автопродление?
-								</span>
-								<div
-									class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
-								>
-									+
-								</div>
-							</button>
-							<div
-								class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
-							>
-								<div class="overflow-hidden">
-									<div class="px-6 pb-6 text-sm text-gray-400 leading-relaxed">
-										Нет. Платите за нужный период — и пользуетесь. За 3 и 1 день
-										до конца придёт напоминание.
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div
-							class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
-						>
-							<button
-								class="accordion-btn w-full flex items-center justify-between p-3 text-left"
-							>
-								<span class="text-white text-sm font-semibold pr-4">
-									Что если перестанет работать?
-								</span>
-								<div
-									class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
-								>
-									+
-								</div>
-							</button>
-							<div
-								class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
-							>
-								<div class="overflow-hidden">
-									<div class="px-6 pb-6 text-sm text-gray-400 leading-relaxed">
-										Напишите в @dowtu — починим. Если не сможем восстановить —
-										вернём остаток подписки.
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			<!-- CTA -->
-			<section class="w-full pt-16 pb-24">
-				<div class="w-full max-w-4xl mx-auto p-4">
-					<div
-						class="relative w-full rounded-[24px] border border-white/5 bg-[#0b0c10] px-6 py-16 text-center overflow-hidden shadow-2xl"
-					>
-						<div
-							class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(244,63,142,0.15)_0%,transparent_65%)] pointer-events-none"
-						></div>
-
-						<div class="relative z-10 flex flex-col items-center">
-							<span
-								class="inline-block text-[10px] font-bold text-[#f43f8e] tracking-[0.2em] uppercase border border-[#f43f8e]/30 rounded-full px-4 py-1.5 bg-[#201219]/50 mb-6 backdrop-blur-sm"
-							>
-								Начать сейчас
-							</span>
-
-							<h2
-								class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4"
-							>
-								Готовы попробовать?
-							</h2>
+							</h1>
 
 							<p
-								class="text-sm sm:text-base text-gray-500 font-medium tracking-wide mb-8"
+								class="mx-auto mt-6 max-w-2xl text-base leading-7 text-gray-400 sm:text-lg"
 							>
-								3 дня бесплатно. Без карты. Без рекламы.
+								VLESS / Reality протокол. Стабильная скорость, без логов, без
+								рекламы. Подключение в один тап — прямо из Telegram.
 							</p>
 
+							<div
+								class="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center"
+							>
+								<a
+									href="https://t.me/vpnbliss_bot"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-block rounded-xl bg-white px-7 py-4 font-medium text-black transition hover:bg-gray-200"
+								>
+									Открыть в Telegram
+								</a>
+
+								<a
+									href="#connection"
+									class="rounded-xl border border-white/10 bg-[#0d0e11] px-7 py-4 transition hover:bg-[#17191d]"
+								>
+									Как это работает?
+								</a>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<!-- FEATURES -->
+				<section class="flex min-h-[calc(100vh-64px)] items-center py-10">
+					<div
+						class="container mx-auto max-w-6xl px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+					>
+						<div
+							class="flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] hover:border-blue-500/15 transition-all duration-300"
+						>
+							<div
+								class="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400"
+							>
+								<span class="text-xl">⬡</span>
+							</div>
+							<div class="flex flex-col gap-2">
+								<h3 class="text-lg font-semibold text-white tracking-wide">
+									Reality протокол
+								</h3>
+								<p class="text-sm text-gray-400 leading-relaxed">
+									Современный TLS-трафик с настоящим SNI. Соединение неотличимо
+									от обычного HTTPS-сайта.
+								</p>
+							</div>
+						</div>
+
+						<div
+							class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-green-500/15 hover:shadow-[0_0_25px_rgba(0,148,79,0.3)] transition-all duration-300"
+						>
+							<div
+								class="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+							>
+								<span class="text-xl">🌐</span>
+							</div>
+							<div class="flex flex-col gap-2">
+								<h3 class="text-lg font-semibold text-white tracking-wide">
+									Без логов
+								</h3>
+								<p class="text-sm text-gray-400 leading-relaxed">
+									Мы не храним историю подключений, не пишем DNS-запросы, не
+									продаём данные.
+								</p>
+							</div>
+						</div>
+
+						<div
+							class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:border-orange-500/15 hover:shadow-[0_0_25px_rgba(249,115,22,0.25)] hover:bg-[#08090b] transition-all duration-300"
+						>
+							<div
+								class="flex items-center justify-center w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400"
+							>
+								<span class="text-xl">⚡</span>
+							</div>
+							<div class="flex flex-col gap-2">
+								<h3 class="text-lg font-semibold text-white tracking-wide">
+									Скорость без потерь
+								</h3>
+								<p class="text-sm text-gray-400 leading-relaxed">
+									XTLS-Vision снижает CPU-нагрузку на сервере. Видео в 4K,
+									gaming без лагов.
+								</p>
+							</div>
+						</div>
+
+						<div
+							class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-pink-500/15 hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] transition-all duration-300"
+						>
+							<div
+								class="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400"
+							>
+								<span class="text-xl">🕒</span>
+							</div>
+							<div class="flex flex-col gap-2">
+								<h3 class="text-lg font-semibold text-white tracking-wide">
+									Подключение за 30 секунд
+								</h3>
+								<p class="text-sm text-gray-400 leading-relaxed">
+									Один тап в Telegram. Скопируй ссылку, вставь в Happ. Готово.
+								</p>
+							</div>
+						</div>
+
+						<div
+							class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-blue-500/15 hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] transition-all duration-300"
+						>
+							<div
+								class="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-400/10 border border-blue-400/20 text-blue-400"
+							>
+								<span class="text-xl">📱</span>
+							</div>
+							<div class="flex flex-col gap-2">
+								<h3 class="text-lg font-semibold text-white tracking-wide">
+									Все платформы
+								</h3>
+								<p class="text-sm text-gray-400 leading-relaxed">
+									iOS, Android, macOS, Windows. Одна подписка — все устройства.
+								</p>
+							</div>
+						</div>
+
+						<div
+							class="flex flex-col items-start gap-4 rounded-2xl border border-white/5 bg-[#131316] p-5 hover:bg-[#08090b] hover:border-green-500/15 hover:shadow-[0_0_25px_rgba(0,148,79,0.3)] transition-all duration-300"
+						>
+							<div
+								class="flex items-center justify-center w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400"
+							>
+								<span class="text-xl">🔒</span>
+							</div>
+							<div class="flex flex-col gap-2">
+								<h3 class="text-lg font-semibold text-white tracking-wide">
+									Оплата как удобно
+								</h3>
+								<p class="text-sm text-gray-400 leading-relaxed">
+									СБП, банковские карты, Telegram Stars, криптовалюта. Без
+									подписок — плати когда хочешь.
+								</p>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<!-- CONNECTION STEPS -->
+				<section
+					id="connection"
+					class="w-full pt-16 pb-24"
+				>
+					<div
+						class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
+					>
+						<div class="max-w-3xl text-center mb-12">
+							<h2
+								class="text-3xl sm:text-4xl font-bold leading-tight tracking-tighter text-white"
+							>
+								Три шага до приватности
+							</h2>
+						</div>
+
+						<div class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6">
+							<div
+								class="relative overflow-hidden flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-6 hover:border-gray-500 transition-all duration-300"
+							>
+								<span
+									class="absolute right-2 sm:-right-4 lg:-right-6 top-2 sm:-top-4 lg:-top-6 text-[clamp(64px,12vw,160px)] font-bold text-pink-400/[0.05] leading-none select-none pointer-events-none z-0"
+								>
+									1
+								</span>
+								<div class="relative z-10 flex flex-col gap-4 w-full">
+									<div
+										class="flex items-center justify-center w-12 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-sm"
+									>
+										01
+									</div>
+									<div class="flex flex-col gap-2">
+										<h3 class="text-xl font-bold text-white tracking-wide">
+											Откройте Telegram-бота
+										</h3>
+										<p class="text-sm text-gray-400 leading-relaxed">
+											Нажмите кнопку ниже — откроется наш бот в Telegram. Если
+											бота нет — устанавливать ничего не нужно.
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<div
+								class="relative overflow-hidden flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-6 hover:border-gray-500 transition-all duration-300"
+							>
+								<span
+									class="absolute right-2 sm:-right-4 lg:-right-6 top-2 sm:-top-4 lg:-top-6 text-[clamp(64px,12vw,160px)] font-bold text-pink-400/[0.05] leading-none select-none pointer-events-none z-0"
+								>
+									2
+								</span>
+								<div class="relative z-10 flex flex-col gap-4 w-full">
+									<div
+										class="flex items-center justify-center w-12 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-sm"
+									>
+										02
+									</div>
+									<div class="flex flex-col gap-2">
+										<h3 class="text-xl font-bold text-white tracking-wide">
+											Выберите тариф
+										</h3>
+										<p class="text-sm text-gray-400 leading-relaxed">
+											Первые 3 дня — бесплатно. Дальше — от 100₽ в месяц. Оплата
+											картой, СБП или Stars.
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<div
+								class="relative overflow-hidden flex flex-col items-start gap-4 rounded-3xl border border-white/5 bg-[#131316] p-6 hover:border-gray-500 transition-all duration-300"
+							>
+								<span
+									class="absolute right-2 sm:-right-4 lg:-right-6 top-2 sm:-top-4 lg:-top-6 text-[clamp(64px,12vw,160px)] font-bold text-pink-400/[0.05] leading-none select-none pointer-events-none z-0"
+								>
+									3
+								</span>
+								<div class="relative z-10 flex flex-col gap-4 w-full">
+									<div
+										class="flex items-center justify-center w-12 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-sm"
+									>
+										03
+									</div>
+									<div class="flex flex-col gap-2">
+										<h3 class="text-xl font-bold text-white tracking-wide">
+											Подключитесь через Happ
+										</h3>
+										<p class="text-sm text-gray-400 leading-relaxed">
+											Скачайте бесплатный клиент Happ → скопируйте ссылку из
+											бота → один тап и вы подключены.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="flex justify-center w-full mt-12">
 							<a
 								href="https://t.me/vpnbliss_bot"
 								target="_blank"
 								rel="noopener noreferrer"
-								class="inline-flex items-center justify-center gap-2.5 bg-white text-black font-semibold text-sm rounded-xl px-8 py-4 w-full max-w-sm transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] shadow-lg shadow-white/5 mb-8"
+								class="inline-flex items-center justify-center gap-2 border bg-white text-black font-semibold rounded-2xl px-6 py-2.5 text-sm hover:bg-gray-100 transition-colors"
 							>
 								<svg
-									class="w-4 h-4 text-black transform rotate-[-15deg] translate-y-[-1px]"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2.5"
-									viewBox="0 0 24 24"
 									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke-width="2"
+									stroke="currentColor"
+									class="w-4 h-4"
 								>
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"
-										d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+										d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
 									/>
 								</svg>
-								<span>Подключиться в Telegram</span>
+								<span>Начать</span>
 							</a>
+						</div>
+					</div>
+				</section>
 
-							<div class="flex flex-wrap items-center justify-center gap-3">
-								<div
-									class="flex items-center gap-1.5 bg-[#14151b] border border-white/5 rounded-lg px-3 py-1.5 text-[11px] text-gray-400 font-medium"
+				<!-- RATES -->
+				<section
+					id="rates"
+					class="w-full pt-16 pb-24"
+				>
+					<div
+						class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
+					>
+						<div class="max-w-3xl text-center mb-20">
+							<h2
+								class="text-3xl sm:text-4xl lg:text-5xl mt-10 leading-tight tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-400"
+							>
+								Чем дольше — тем выгоднее
+							</h2>
+							<p class="mt-3 text-[#99a1af]">
+								Никаких автосписаний. Платите за тот период, который нужен.
+							</p>
+						</div>
+
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+							<div
+								class="flex flex-col gap-4 rounded-2xl border border-white/5 bg-[#131316] p-6 hover:bg-[#08090b] hover:border-white/10 transition-all duration-300"
+							>
+								<span
+									class="text-xs font-semibold tracking-wider text-gray-500"
 								>
-									<span
-										class="text-[9px] font-bold tracking-tighter bg-gray-500 text-[#14151b] px-0.5 rounded-sm"
-									>
-										RU
+									1 МЕСЯЦ
+								</span>
+								<div class="flex items-baseline gap-1">
+									<span class="text-4xl sm:text-5xl font-bold text-white">
+										100
 									</span>
-									<span>СБП</span>
+									<span class="text-2xl font-bold text-gray-500">₽</span>
 								</div>
-								<div
-									class="flex items-center gap-1.5 bg-[#14151b] border border-white/5 rounded-lg px-3 py-1.5 text-[11px] text-gray-400 font-medium"
-								>
-									<span class="text-amber-400 text-xs">★</span>
-									<span>Telegram Stars</span>
+								<span class="text-sm text-gray-400">100 ₽ / мес.</span>
+								<div class="border-t border-white/5 pt-4 flex flex-col gap-3">
+									<div class="flex items-center gap-2.5">
+										<span
+											class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
+										>
+											●
+										</span>
+										<span class="text-sm text-gray-300">Все регионы</span>
+									</div>
+									<div class="flex items-center gap-2.5">
+										<span
+											class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
+										>
+											●
+										</span>
+										<span class="text-sm text-gray-300">
+											Безлимитный трафик
+										</span>
+									</div>
+									<div class="flex items-center gap-2.5">
+										<span
+											class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
+										>
+											●
+										</span>
+										<span class="text-sm text-gray-300">Поддержка 24/7</span>
+									</div>
 								</div>
-								<div
-									class="flex items-center gap-1.5 bg-[#14151b] border border-white/5 rounded-lg px-3 py-1.5 text-[11px] text-gray-400 font-medium"
+							</div>
+
+							<div
+								class="relative flex flex-col gap-4 rounded-2xl border border-pink-500/30 bg-[#131316] p-6 transition-all duration-300 shadow-[0_0_60px_10px_rgba(236,72,153,0.35),0_0_20px_rgba(236,72,153,0.4)]"
+							>
+								<span
+									class="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-full bg-pink-500/30 text-white"
 								>
-									<span>В Crypto</span>
+									⚡ ВЫГОДНО
+								</span>
+								<span
+									class="text-xs font-semibold tracking-wider text-gray-500"
+								>
+									3 МЕСЯЦА
+								</span>
+								<div class="flex items-baseline gap-1">
+									<span class="text-4xl sm:text-5xl font-bold text-white">
+										245
+									</span>
+									<span class="text-2xl font-bold text-gray-500">₽</span>
+								</div>
+								<div class="flex items-center gap-2">
+									<span class="text-sm text-gray-400">81 ₽ / мес.</span>
+									<span
+										class="text-xs font-semibold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md"
+									>
+										-31%
+									</span>
+								</div>
+								<div class="border-t border-white/5 pt-4 flex flex-col gap-3">
+									<div class="flex items-center gap-2.5">
+										<span
+											class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
+										>
+											●
+										</span>
+										<span class="text-sm text-gray-300">Все регионы</span>
+									</div>
+									<div class="flex items-center gap-2.5">
+										<span
+											class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
+										>
+											●
+										</span>
+										<span class="text-sm text-gray-300">
+											Безлимитный трафик
+										</span>
+									</div>
+									<div class="flex items-center gap-2.5">
+										<span
+											class="flex items-center justify-center w-4 h-4 rounded-full bg-green-500/15 text-green-400 text-[10px]"
+										>
+											●
+										</span>
+										<span class="text-sm text-gray-300">До 5 устройств</span>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="flex justify-center w-full mt-12">
+							<a
+								href="https://t.me/vpnbliss_bot"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="inline-flex items-center justify-center gap-2 border bg-white text-black font-semibold rounded-2xl p-3 text-sm hover:bg-gray-100 transition-colors"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke-width="2"
+									stroke="currentColor"
+									class="w-4 h-4"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+									/>
+								</svg>
+								<span>Купить через Telegram</span>
+							</a>
+						</div>
+						<p class="mt-3 text-xs text-[#535354] text-center px-4">
+							Или попробуйте
+							<span class="text-pink-400 font-medium">3 дня бесплатно</span>
+							— без привязки карты
+						</p>
+					</div>
+				</section>
+
+				<!-- FAQ -->
+				<section
+					id="FAQ"
+					class="w-full pt-16 pb-24"
+				>
+					<div
+						class="mx-auto flex max-w-7xl flex-col items-center px-4 sm:px-6 lg:px-8"
+					>
+						<h2 class="text-3xl sm:text-4xl lg:text-5xl text-white text-center">
+							Что нужно знать
+						</h2>
+
+						<div class="w-full max-w-2xl space-y-4 mt-10">
+							<div
+								class="accordion rounded-2xl border border-[#2c2430] bg-[#121217] overflow-hidden"
+							>
+								<button
+									class="accordion-btn w-full flex items-center justify-between p-3 text-left"
+								>
+									<span class="text-white text-sm font-semibold pr-4">
+										Что такое VLESS и Reality?
+									</span>
+									<div
+										class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
+									>
+										+
+									</div>
+								</button>
+								<div
+									class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
+								>
+									<div class="overflow-hidden">
+										<div
+											class="px-6 pb-6 text-sm text-gray-400 leading-relaxed"
+										>
+											VLESS — современный протокол шифрования. Reality —
+											технология, позволяющая маскировать VPN-трафик под обычный
+											HTTPS.
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div
+								class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
+							>
+								<button
+									class="accordion-btn w-full flex items-center justify-between p-3 text-left"
+								>
+									<span class="text-white text-sm font-semibold pr-4">
+										Нужен ли Telegram?
+									</span>
+									<div
+										class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
+									>
+										+
+									</div>
+								</button>
+								<div
+									class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
+								>
+									<div class="overflow-hidden">
+										<div
+											class="px-6 pb-6 text-sm text-gray-400 leading-relaxed"
+										>
+											Да — управление подпиской и оплата происходят через нашего
+											бота. Сам VPN работает в отдельном приложении Happ
+											независимо от Telegram.
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div
+								class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
+							>
+								<button
+									class="accordion-btn w-full flex items-center justify-between p-3 text-left"
+								>
+									<span class="text-white text-sm font-semibold pr-4">
+										Что с логами?
+									</span>
+									<div
+										class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
+									>
+										+
+									</div>
+								</button>
+								<div
+									class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
+								>
+									<div class="overflow-hidden">
+										<div
+											class="px-6 pb-6 text-sm text-gray-400 leading-relaxed"
+										>
+											Не храним. Мы не пишем историю подключений, не логируем
+											DNS-запросы, не сотрудничаем с рекламными сетями.
+											Зашифрованный туннель — единственное, что мы поддерживаем.
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div
+								class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
+							>
+								<button
+									class="accordion-btn w-full flex items-center justify-between p-3 text-left"
+								>
+									<span class="text-white text-sm font-semibold pr-4">
+										Есть автопродление?
+									</span>
+									<div
+										class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
+									>
+										+
+									</div>
+								</button>
+								<div
+									class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
+								>
+									<div class="overflow-hidden">
+										<div
+											class="px-6 pb-6 text-sm text-gray-400 leading-relaxed"
+										>
+											Нет. Платите за нужный период — и пользуетесь. За 3 и 1
+											день до конца придёт напоминание.
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div
+								class="accordion rounded-2xl border border-[#1e2430] bg-[#111216] overflow-hidden"
+							>
+								<button
+									class="accordion-btn w-full flex items-center justify-between p-3 text-left"
+								>
+									<span class="text-white text-sm font-semibold pr-4">
+										Что если перестанет работать?
+									</span>
+									<div
+										class="icon flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#2f5fb8] text-[#4b82ff] transition-transform duration-300"
+									>
+										+
+									</div>
+								</button>
+								<div
+									class="accordion-content grid grid-rows-[0fr] transition-all duration-300 ease-in-out"
+								>
+									<div class="overflow-hidden">
+										<div
+											class="px-6 pb-6 text-sm text-gray-400 leading-relaxed"
+										>
+											Напишите в @dowtu — починим. Если не сможем восстановить —
+											вернём остаток подписки.
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
 					</div>
-				</div>
-			</section>
-		</div>
+				</section>
+
+				<!-- CTA -->
+				<section class="w-full pt-16 pb-24">
+					<div class="w-full max-w-4xl mx-auto p-4">
+						<div
+							class="relative w-full rounded-[24px] border border-white/5 bg-[#0b0c10] px-6 py-16 text-center overflow-hidden shadow-2xl"
+						>
+							<div
+								class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(244,63,142,0.15)_0%,transparent_65%)] pointer-events-none"
+							></div>
+
+							<div class="relative z-10 flex flex-col items-center">
+								<span
+									class="inline-block text-[10px] font-bold text-[#f43f8e] tracking-[0.2em] uppercase border border-[#f43f8e]/30 rounded-full px-4 py-1.5 bg-[#201219]/50 mb-6 backdrop-blur-sm"
+								>
+									Начать сейчас
+								</span>
+
+								<h2
+									class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4"
+								>
+									Готовы попробовать?
+								</h2>
+
+								<p
+									class="text-sm sm:text-base text-gray-500 font-medium tracking-wide mb-8"
+								>
+									3 дня бесплатно. Без карты. Без рекламы.
+								</p>
+
+								<a
+									href="https://t.me/vpnbliss_bot"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-flex items-center justify-center gap-2.5 bg-white text-black font-semibold text-sm rounded-xl px-8 py-4 w-full max-w-sm transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] shadow-lg shadow-white/5 mb-8"
+								>
+									<svg
+										class="w-4 h-4 text-black transform rotate-[-15deg] translate-y-[-1px]"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2.5"
+										viewBox="0 0 24 24"
+										xmlns="http://www.w3.org/2000/svg"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+										/>
+									</svg>
+									<span>Подключиться в Telegram</span>
+								</a>
+
+								<div class="flex flex-wrap items-center justify-center gap-3">
+									<div
+										class="flex items-center gap-1.5 bg-[#14151b] border border-white/5 rounded-lg px-3 py-1.5 text-[11px] text-gray-400 font-medium"
+									>
+										<span
+											class="text-[9px] font-bold tracking-tighter bg-gray-500 text-[#14151b] px-0.5 rounded-sm"
+										>
+											RU
+										</span>
+										<span>СБП</span>
+									</div>
+									<div
+										class="flex items-center gap-1.5 bg-[#14151b] border border-white/5 rounded-lg px-3 py-1.5 text-[11px] text-gray-400 font-medium"
+									>
+										<span class="text-amber-400 text-xs">★</span>
+										<span>Telegram Stars</span>
+									</div>
+									<div
+										class="flex items-center gap-1.5 bg-[#14151b] border border-white/5 rounded-lg px-3 py-1.5 text-[11px] text-gray-400 font-medium"
+									>
+										<span>В Crypto</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
 		</main>
 
 		<!-- MAIN WINDOW (private cabinet) -->
@@ -983,7 +1006,7 @@
 						Telegram-канал
 					</a>
 					<a
-						href="https://t.me/dowtu"
+						href="https://t.me/BlissSupport_bot"
 						class="hover:text-white transition-colors duration-150"
 					>
 						Поддержка

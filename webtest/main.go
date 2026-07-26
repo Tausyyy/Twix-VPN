@@ -49,6 +49,11 @@ func main() {
 	frontendDir = os.Getenv("FRONTEND_DIR")
 	internalSecret = os.Getenv("INTERNAL_SECRET")
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	if panelURL == "" || panelUser == "" || panelPass == "" {
 		log.Fatal("missing required env vars: PANEL_URL, PANEL_USER, PANEL_PASS")
 	}
