@@ -347,6 +347,7 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 
 type internalCreateRequest struct {
 	UserID int64 `json:"user_id"`
+	TelegramID int64 `json:"telegram_id"`
 }
 
 // internalCreateHandler создаёт (или находит уже существующего) клиента в
@@ -376,11 +377,11 @@ func internalCreateHandler(w http.ResponseWriter, r *http.Request) {
 	subID, err := getClientSubID(email)
 	if err != nil {
 		// 2) Раз клиента нет (или временная сетевая ошибка) - создаём.
-		addErr := addClient(email, req.UserID)
+		addErr := addClient(email, req.TelegramID)
 		if addErr != nil {
 			// возможно сессия/csrf протухли — пробуем перелогиниться и повторить один раз
 			if loginErr := panelLogin(); loginErr == nil {
-				addErr = addClient(email, req.UserID)
+				addErr = addClient(email, req.TelegramID)
 			} else {
 				addErr = fmt.Errorf("%v (relogin also failed: %v)", addErr, loginErr)
 			}
