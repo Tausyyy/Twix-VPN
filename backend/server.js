@@ -144,7 +144,7 @@ app.get('/me', (req, res) => {
 	}
 	const user = db
 		.prepare(
-			'SELECT id, email, telegram_id, balance, vpn_link FROM users WHERE id = ?'
+			'SELECT id, email, telegram_id, balance, vpn_link, subscription_active FROM users WHERE id = ?'
 		)
 		.get(req.session.userId)
 
@@ -152,7 +152,7 @@ app.get('/me', (req, res) => {
 		user: {
 			...user,
 			is_vip: isVip(user.telegram_id),
-			has_subscription: !!user.vpn_link
+			has_subscription: !!user.subscription_active
 		}
 	})
 })
@@ -163,13 +163,31 @@ app.post('/logout', (req, res) => {
 
 const SUBSCRIPTION_COST = Number(process.env.SUBSCRIPTION_COST || 0)
 
-// Создаёт (или возвращает уже существующую) ссылку на VPN-подписку для
-// текущего залогиненного пользователя. Ссылка выдаётся один раз на юзера -
-// повторные клики отдают тот же результат, новый клиент в панели не плодится.
+// Создаёт (или подтверждает существующую) ссылку на VPN-подписку для
+// текущего залогиненного пользователя.
+//
+// Три вещи, которые тут специально разведены:
+//
+// 1. "Оплачено ли вообще" - флаг subscription_active. Списываем деньги
+//    РОВНО ОДИН РАЗ, когда он переключается 0 -> 1. Кнопка "обновить
+//    ссылку" (force=true) НЕ считается новой оплатой - она только
+//    заставляет заново спросить у Go живую ссылку, а не списывает деньги.
+//
+// 2. "Жива ли ссылка прямо сейчас" - НЕ доверяем локальному кэшу vpn_link
+//    молча. Каждый раз, когда нужно отдать ссылку (первая оплата ИЛИ
+//    force=true), реально спрашиваем у Go/3x-ui - если клиента удалили
+//    в панели руками, Go пересоздаст его сам, и мы отдадим рабочую
+//    ссылку вместо мёртвой.
+//
+// 3. Атомарность списания - вся проверка "не оплачено ещё + хватает
+//    денег" и сам факт списания происходят ОДНИМ синхронным SQL-запросом
+//    без await между чтением и записью. Это исключает гонку: даже если
+//    юзер тыкает кнопку очень быстро несколько раз подряд, второй запрос
+//    увидит subscription_active уже = 1 и не спишет деньги повторно.
 app.post('/create', requireAuth, async (req, res) => {
 	const user = db
 		.prepare(
-			'SELECT id, telegram_id, vpn_link, balance FROM users WHERE id = ?'
+			'SELECT id, telegram_id, balance, subscription_active, vpn_link FROM users WHERE id = ?'
 		)
 		.get(req.session.userId)
 
@@ -178,17 +196,58 @@ app.post('/create', requireAuth, async (req, res) => {
 	}
 
 	const forceRecreate = req.body?.force === true
-
-	if (user.vpn_link && !forceRecreate) {
-		return res.json({ success: true, link: user.vpn_link, exists: true })
-	}
-
 	const vip = isVip(user.telegram_id)
+	let alreadyActive = !!user.subscription_active
 
-	if (!vip && user.balance < SUBSCRIPTION_COST) {
-		return res.status(402).json({ error: 'Недостаточно средств на балансе' })
+	// --- Синхронный, атомарный блок списания. Между чтением состояния и
+	// записью НЕТ ни одного await, поэтому конкурентный запрос физически
+	// не может протиснуться между ними (Node однопоточный, better-sqlite3
+	// выполняется синхронно).
+	if (!alreadyActive) {
+		if (vip) {
+			// VIP просто активируем без списания.
+			const result = db
+				.prepare(
+					'UPDATE users SET subscription_active = 1 WHERE id = ? AND subscription_active = 0'
+				)
+				.run(user.id)
+			alreadyActive = true // после этого шага пользователь точно активен -
+			// либо активировали мы, либо кто-то параллельно уже успел
+		} else {
+			const result = db
+				.prepare(
+					`UPDATE users
+					 SET balance = balance - ?, subscription_active = 1
+					 WHERE id = ? AND subscription_active = 0 AND balance >= ?`
+				)
+				.run(SUBSCRIPTION_COST, user.id, SUBSCRIPTION_COST)
+
+			if (result.changes === 1) {
+				alreadyActive = true // мы списали деньги прямо сейчас
+			} else {
+				// Условие WHERE не сработало - либо не хватило денег,
+				// либо (гонка) кто-то параллельно уже активировал подписку.
+				// Перечитываем актуальное состояние, чтобы понять, что именно.
+				const fresh = db
+					.prepare('SELECT subscription_active FROM users WHERE id = ?')
+					.get(user.id)
+
+				if (fresh.subscription_active) {
+					alreadyActive = true // параллельный запрос уже всё оплатил - не ошибка
+				} else {
+					return res
+						.status(402)
+						.json({ error: 'Недостаточно средств на балансе' })
+				}
+			}
+		}
 	}
+	// --- конец атомарного блока
 
+	// Если это первый заход (только что стали alreadyActive) и НЕ force -
+	// сразу создаём. Если это повторный визит без force - можно было бы
+	// отдать закэшированную ссылку не ходя в Go, но это и есть баг №3
+	// из прошлого раза (мёртвая ссылка) - поэтому ходим в Go всегда.
 	try {
 		const controller = new AbortController()
 		const timeoutId = setTimeout(() => controller.abort(), 20000)
@@ -212,21 +271,16 @@ app.post('/create', requireAuth, async (req, res) => {
 				.json({ error: data.error || 'Не удалось создать подписку' })
 		}
 
-		if (!vip && SUBSCRIPTION_COST > 0) {
-			db.prepare('UPDATE users SET balance = balance - ? WHERE id = ?').run(
-				SUBSCRIPTION_COST,
-				user.id
-			)
-		}
-
 		db.prepare('UPDATE users SET vpn_link = ? WHERE id = ?').run(
 			data.link,
 			user.id
 		)
 
-		const updatedBalance = vip ? user.balance : user.balance - SUBSCRIPTION_COST
+		const updatedUser = db
+			.prepare('SELECT balance FROM users WHERE id = ?')
+			.get(user.id)
 
-		res.json({ success: true, link: data.link, balance: updatedBalance })
+		res.json({ success: true, link: data.link, balance: updatedUser.balance })
 	} catch (err) {
 		console.error('create error:', err)
 		const message =
