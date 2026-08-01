@@ -315,6 +315,158 @@ app.post('/create', requireAuth, async (req, res) => {
 	}
 })
 
+// ==== Платежи через Platega ====
+
+const PLATEGA_MERCHANT_ID = process.env.PLATEGA_MERCHANT_ID
+const PLATEGA_SECRET = process.env.PLATEGA_SECRET
+const PLATEGA_BASE_URL =
+	process.env.PLATEGA_BASE_URL || 'https://app.platega.io'
+const SITE_URL = process.env.SITE_URL || 'https://blissvpn.vu'
+
+if (!PLATEGA_MERCHANT_ID || !PLATEGA_SECRET) {
+	console.error(
+		'PLATEGA_MERCHANT_ID / PLATEGA_SECRET не заданы в backend/db/.env - платежи работать не будут'
+	)
+}
+
+// Создаёт платёж на пополнение баланса для текущего залогиненного
+// пользователя. Сумма приходит с фронта - amount в рублях, > 0.
+app.post('/api/payment/create', requireAuth, async (req, res) => {
+	const amount = Number(req.body?.amount)
+
+	if (!amount || amount <= 0) {
+		return res.status(400).json({ error: 'Некорректная сумма' })
+	}
+
+	try {
+		const controller = new AbortController()
+		const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+		const plategaResp = await fetch(`${PLATEGA_BASE_URL}/transaction/process`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-MerchantId': PLATEGA_MERCHANT_ID,
+				'X-Secret': PLATEGA_SECRET
+			},
+			body: JSON.stringify({
+				paymentMethod: 2, // СБП
+				paymentDetails: {
+					amount,
+					currency: 'RUB'
+				},
+				description: `Пополнение баланса Bliss VPN, пользователь #${req.session.userId}`,
+				return: `${SITE_URL}/payment-success`,
+				failedUrl: `${SITE_URL}/payment-failed`
+			}),
+			signal: controller.signal
+		})
+		clearTimeout(timeoutId)
+
+		const data = await plategaResp.json()
+
+		if (!plategaResp.ok || !data.transactionId) {
+			console.error('platega create error:', data)
+			return res
+				.status(502)
+				.json({ error: 'Не удалось создать платёж, попробуйте позже' })
+		}
+
+		// Сохраняем транзакцию как PENDING - callback потом найдёт её по
+		// transaction_id и поймёт, какому пользователю зачислять деньги.
+		db.prepare(
+			'INSERT INTO payments (transaction_id, user_id, amount, status) VALUES (?, ?, ?, ?)'
+		).run(data.transactionId, req.session.userId, amount, 'PENDING')
+
+		res.json({ success: true, redirect: data.redirect })
+	} catch (err) {
+		console.error('payment create error:', err)
+		const message =
+			err.name === 'AbortError'
+				? 'Платёжный сервис не отвечает (таймаут)'
+				: 'Платёжный сервис недоступен'
+		res.status(502).json({ error: message })
+	}
+})
+
+// Публичный эндпоинт - сюда стучится сама Platega при изменении статуса
+// транзакции. URL нужно указать в личном кабинете Platega (Настройки ->
+// Callback URLs). ВАЖНО: должен отвечать быстро (в течение 60 секунд),
+// иначе Platega повторит попытку до 3 раз с интервалом 5 минут.
+app.post('/api/payment/callback', (req, res) => {
+	// Platega подтверждает свою личность теми же заголовками,
+	// что мы используем для авторизации своих запросов к ней.
+	if (
+		req.headers['x-merchantid'] !== PLATEGA_MERCHANT_ID ||
+		req.headers['x-secret'] !== PLATEGA_SECRET
+	) {
+		return res.status(403).json({ error: 'forbidden' })
+	}
+
+	const { id, status, amount } = req.body
+
+	if (!id || !status) {
+		return res.status(400).json({ error: 'id и status обязательны' })
+	}
+
+	const payment = db
+		.prepare('SELECT * FROM payments WHERE transaction_id = ?')
+		.get(id)
+
+	if (!payment) {
+		// Платёж не наш / уже удалён - отвечаем 200, чтобы Platega
+		// не долбила повторными попытками бессмысленно.
+		console.warn('callback for unknown transaction_id:', id)
+		return res.json({ success: true })
+	}
+
+	if (status === 'CONFIRMED') {
+		// Атомарно: зачисляем баланс и помечаем платёж подтверждённым
+		// ОДНИМ синхронным шагом, защищённым условием status='PENDING' -
+		// если Platega пришлёт callback дважды за одну и ту же транзакцию
+		// (у них это официально предусмотрено - retry при не-200 ответе),
+		// повторное зачисление физически невозможно: второй раз условие
+		// WHERE status = 'PENDING' не совпадёт, changes будет 0.
+		const result = db
+			.prepare(
+				`UPDATE payments SET status = 'CONFIRMED', updated_at = CURRENT_TIMESTAMP WHERE transaction_id = ? AND status = 'PENDING'`
+			)
+			.run(id)
+
+		if (result.changes === 1) {
+			db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(
+				payment.amount,
+				payment.user_id
+			)
+			console.log(
+				`Баланс пользователя ${payment.user_id} пополнен на ${payment.amount} (transaction ${id})`
+			)
+		}
+	} else if (status === 'CANCELED' || status === 'CHARGEBACKED') {
+		db.prepare(
+			`UPDATE payments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE transaction_id = ? AND status = 'PENDING'`
+		).run(status, id)
+	}
+
+	res.json({ success: true })
+})
+
+// Позволяет фронту узнать текущий статус платежа (для страницы
+// "ожидание оплаты" - можно поллить, пока callback не придёт).
+app.get('/api/payment/status/:transactionId', requireAuth, (req, res) => {
+	const payment = db
+		.prepare(
+			'SELECT transaction_id, status, amount FROM payments WHERE transaction_id = ? AND user_id = ?'
+		)
+		.get(req.params.transactionId, req.session.userId)
+
+	if (!payment) {
+		return res.status(404).json({ error: 'Платёж не найден' })
+	}
+
+	res.json({ status: payment.status, amount: payment.amount })
+})
+
 app.post('/api/bot/login', (req, res) => {
 	if (req.headers['x-bot-secret'] !== process.env.BOT_API_SECRET) {
 		return res.status(403).json({ error: 'forbidden' })

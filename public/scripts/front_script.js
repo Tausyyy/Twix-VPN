@@ -129,9 +129,9 @@ document.querySelectorAll('.accordion-btn').forEach(btn => {
 
 		const isOpen = content.classList.contains('grid-rows-[1fr]')
 
-		document.querySelectorAll('.accordion-content').forEach(el =>
-			el.classList.replace('grid-rows-[1fr]', 'grid-rows-[0fr]')
-		)
+		document
+			.querySelectorAll('.accordion-content')
+			.forEach(el => el.classList.replace('grid-rows-[1fr]', 'grid-rows-[0fr]'))
 		document.querySelectorAll('.icon').forEach(el => (el.textContent = '+'))
 
 		if (!isOpen) {
@@ -166,7 +166,8 @@ if (mobileMenuBtn && mobileMenu) {
 // ===== Logo button =====
 
 document.getElementById('logo_btn')?.addEventListener('click', e => {
-	if (document.getElementById('main_window')?.classList.contains('hidden')) return
+	if (document.getElementById('main_window')?.classList.contains('hidden'))
+		return
 	e.preventDefault()
 	showWelcome()
 })
@@ -326,10 +327,12 @@ document.addEventListener('DOMContentLoaded', () => {
 					</div>
 				`)
 
-				document.getElementById('modal_topup_btn')?.addEventListener('click', () => {
-					closeModal()
-					document.getElementById('topup_btn')?.click()
-				})
+				document
+					.getElementById('modal_topup_btn')
+					?.addEventListener('click', () => {
+						closeModal()
+						document.getElementById('topup_btn')?.click()
+					})
 				return
 			}
 
@@ -338,7 +341,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			try {
 				data = text ? JSON.parse(text) : null
 			} catch (parseErr) {
-				throw new Error(`Сервер вернул не-JSON ответ (статус ${resp.status}): ${text.slice(0, 200)}`)
+				throw new Error(
+					`Сервер вернул не-JSON ответ (статус ${resp.status}): ${text.slice(0, 200)}`
+				)
 			}
 
 			if (!data) {
@@ -364,9 +369,11 @@ document.addEventListener('DOMContentLoaded', () => {
 					</button>
 				`)
 
-				document.getElementById('recreate_link_btn')?.addEventListener('click', () => {
-					createLink(true)
-				})
+				document
+					.getElementById('recreate_link_btn')
+					?.addEventListener('click', () => {
+						createLink(true)
+					})
 
 				const copyBtn = document.getElementById('copy_link_btn')
 				copyBtn?.addEventListener('click', async () => {
@@ -444,24 +451,142 @@ document.addEventListener('DOMContentLoaded', () => {
 	generateBtn.addEventListener('click', () => createLink(false))
 })
 
-// ===== Top up =====
+// ===== Payment (Platega) =====
 
-document.getElementById('topup_btn')?.addEventListener('click', () => {
+// Соответствие тарифа (data-rate на кнопке) и суммы к оплате.
+// Меняешь цену тарифа в HTML - не забудь поменять и здесь.
+const RATE_PRICES = {
+	'1m': 100,
+	'3m': 245
+}
+
+async function createPayment(amount) {
 	openModal(`
-		<div class="text-center py-4">
-			<div class="text-4xl mb-3">💳</div>
-			<h3 class="text-lg font-bold mb-2">Пополнение баланса</h3>
-			<p class="text-gray-400 text-sm mb-5">Пополнение происходит через Telegram-бота. Нажмите кнопку ниже.</p>
-			<a href="https://t.me/vpnbliss_bot" target="_blank" rel="noopener noreferrer" class="block w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-xl py-3 font-bold transition-colors duration-300 mb-2">
-				Перейти в бота
-			</a>
-			<button onclick="closeModal()" class="w-full bg-white/5 hover:bg-white/10 rounded-xl py-3 font-medium transition-colors">Закрыть</button>
+		<div class="text-center py-6">
+			<div class="text-gray-400 text-sm">Создаём платёж...</div>
 		</div>
 	`)
+
+	try {
+		const resp = await fetch('/api/payment/create', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify({ amount })
+		})
+
+		const data = await resp.json()
+
+		if (resp.status === 401) {
+			openModal(`
+				<div class="text-center py-4">
+					<div class="text-4xl mb-3">🔒</div>
+					<h3 class="text-lg font-bold mb-2">Сессия истекла</h3>
+					<p class="text-gray-400 text-sm mb-5">Войдите заново, чтобы продолжить</p>
+					<button onclick="closeModal()" class="w-full bg-white/10 hover:bg-white/15 rounded-xl py-3 font-medium transition-colors">Закрыть</button>
+				</div>
+			`)
+			return
+		}
+
+		if (!resp.ok || !data.success) {
+			openModal(`
+				<div class="text-center py-4">
+					<div class="text-4xl mb-3">⚠️</div>
+					<h3 class="text-lg font-bold mb-2">Ошибка</h3>
+					<p class="text-gray-400 text-sm mb-5">${data.error || 'Не удалось создать платёж'}</p>
+					<button onclick="closeModal()" class="w-full bg-white/10 hover:bg-white/15 rounded-xl py-3 font-medium transition-colors">Закрыть</button>
+				</div>
+			`)
+			return
+		}
+
+		// Ведём пользователя на страницу оплаты Platega
+		window.location.href = data.redirect
+	} catch (e) {
+		openModal(`
+			<div class="text-center py-4">
+				<div class="text-4xl mb-3">⚠️</div>
+				<h3 class="text-lg font-bold mb-2">Ошибка запроса</h3>
+				<p class="text-gray-400 text-sm mb-5">${e.message}</p>
+				<button onclick="closeModal()" class="w-full bg-white/10 hover:bg-white/15 rounded-xl py-3 font-medium transition-colors">Закрыть</button>
+			</div>
+		`)
+	}
+}
+
+function openTopupModal() {
+	openModal(`
+		<div class="text-center mb-4">
+			<div class="text-4xl mb-3">💳</div>
+			<h3 class="text-lg font-bold mb-2">Пополнение баланса</h3>
+			<p class="text-gray-400 text-sm">Выберите сумму или введите свою</p>
+		</div>
+
+		<div class="grid grid-cols-3 gap-2 mb-4">
+			<button type="button" class="topup-quick bg-white/5 hover:bg-white/10 rounded-xl py-2 font-bold transition-colors" data-amount="100">100₽</button>
+			<button type="button" class="topup-quick bg-white/5 hover:bg-white/10 rounded-xl py-2 font-bold transition-colors" data-amount="300">300₽</button>
+			<button type="button" class="topup-quick bg-white/5 hover:bg-white/10 rounded-xl py-2 font-bold transition-colors" data-amount="500">500₽</button>
+		</div>
+
+		<input
+			id="topup_amount_input"
+			type="number"
+			min="1"
+			step="1"
+			placeholder="Своя сумма, ₽"
+			class="w-full bg-[#0c0d0f] border border-white/10 rounded-lg p-3 text-sm mb-4 text-center outline-none focus:border-[#0c54a0]"
+		/>
+
+		<button id="topup_confirm_btn" class="w-full bg-[#0c54a0] hover:bg-[#3774b5] rounded-xl py-3 font-bold transition-colors duration-300 mb-2">
+			Пополнить
+		</button>
+		<button onclick="closeModal()" class="w-full bg-white/5 hover:bg-white/10 rounded-xl py-3 font-medium transition-colors">
+			Закрыть
+		</button>
+	`)
+
+	const input = document.getElementById('topup_amount_input')
+	const confirmBtn = document.getElementById('topup_confirm_btn')
+
+	document.querySelectorAll('.topup-quick').forEach(btn => {
+		btn.addEventListener('click', () => {
+			input.value = btn.dataset.amount
+			document
+				.querySelectorAll('.topup-quick')
+				.forEach(b => b.classList.remove('bg-[#0c54a0]', 'hover:bg-[#3774b5]'))
+			btn.classList.add('bg-[#0c54a0]', 'hover:bg-[#3774b5]')
+		})
+	})
+
+	confirmBtn?.addEventListener('click', () => {
+		const amount = Number(input.value)
+		if (!amount || amount <= 0) {
+			input.classList.add('border-red-500')
+			input.focus()
+			return
+		}
+		createPayment(amount)
+	})
+}
+
+document.getElementById('topup_btn')?.addEventListener('click', openTopupModal)
+
+// ===== Купить тариф (кнопки .rate-buy-btn с data-rate="1m"/"3m") =====
+
+document.querySelectorAll('.rate-buy-btn').forEach(btn => {
+	btn.addEventListener('click', () => {
+		const rate = btn.dataset.rate
+		const amount = RATE_PRICES[rate]
+		if (!amount) {
+			console.error('Неизвестный тариф:', rate)
+			return
+		}
+		createPayment(amount)
+	})
 })
 
 // ===== Init =====
-
 ;(async () => {
 	if (window.Telegram?.WebApp?.initData) {
 		await initTelegramAuth()
