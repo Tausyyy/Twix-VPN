@@ -19,7 +19,9 @@ from dotenv import load_dotenv
 from db import get_all_telegram_ids, get_stats
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
-ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
+ADMIN_IDS = {
+	int(x) for x in os.getenv("ADMINS", "").replace(",", " ").split()
+}
 API_URL = os.environ.get("API_URL", "http://127.0.0.1:3000").rstrip("/")
 BOT_API_SECRET = os.environ["BOT_API_SECRET"]
 
@@ -67,7 +69,7 @@ def back_menu():
 
 
 def is_admin(user_id: int) -> bool:
-	return ADMIN_ID != 0 and user_id == ADMIN_ID
+	return user_id in ADMIN_IDS
 
 
 @router.message(Command("admin"))
