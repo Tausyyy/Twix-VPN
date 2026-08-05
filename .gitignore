@@ -25,4 +25,10 @@ dist-ssr
 .env
 cookies.txt.htaccess
 backend/tmp/
+<<<<<<< HEAD
 tmp/
+backend/db/*.sqlite
+=======
+tmp/
+>>>>>>> f8232e207e81abdc122fef769398acfac259796b
+backend/db/database.sqlite
