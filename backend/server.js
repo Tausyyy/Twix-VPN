@@ -488,6 +488,24 @@ app.post('/api/bot/login', (req, res) => {
 	res.json({ token })
 })
 
+
+app.get('/api/bot/all-users', (req, res) => {
+	if (req.headers['x-bot-secret'] !== process.env.BOT_API_SECRET) {
+		return res.status(403).json({ error: 'forbidden' })
+	}
+
+	const rows = db
+		.prepare('SELECT telegram_id, vpn_link FROM users WHERE telegram_id IS NOT NULL')
+		.all()
+
+	res.json({
+		total: rows.length,
+		with_telegram: rows.length,
+		with_link: rows.filter(r => r.vpn_link).length,
+		telegram_ids: rows.map(r => r.telegram_id)
+	})
+})
+
 app.post('/api/telegram-auth', (req, res) => {
 	const { initData } = req.body
 	if (!initData) {
