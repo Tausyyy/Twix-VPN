@@ -144,7 +144,7 @@ app.get('/me', (req, res) => {
 	}
 	const user = db
 		.prepare(
-			'SELECT id, email, telegram_id, balance, vpn_link, subscription_active FROM users WHERE id = ?'
+			'SELECT id, email, telegram_id, balance, vpn_link, subscription_expires_at FROM users WHERE id = ?'
 		)
 		.get(req.session.userId)
 
@@ -152,7 +152,10 @@ app.get('/me', (req, res) => {
 		user: {
 			...user,
 			is_vip: isVip(user.telegram_id),
-			has_subscription: !!user.subscription_active
+			has_subscription: !!(
+				user.subscription_expires_at &&
+				user.subscription_expires_at > Date.now()
+			)
 		}
 	})
 })
@@ -161,54 +164,27 @@ app.post('/logout', (req, res) => {
 	req.session.destroy(() => res.json({ message: 'Вы вышли' }))
 })
 
-const SUBSCRIPTION_COST = Number(process.env.SUBSCRIPTION_COST || 0)
+const SUBSCRIPTION_DURATION_MS =
+	Number(process.env.SUBSCRIPTION_DURATION_DAYS || 30) * 24 * 60 * 60 * 1000
 
-// Создаёт (или подтверждает существующую) ссылку на VPN-подписку для
+// Создаёт (или продлевает/подтверждает существующую) VPN-подписку для
 // текущего залогиненного пользователя.
 //
-// Три вещи, которые тут специально разведены:
-//
-// 1. "Оплачено ли вообще" - флаг subscription_active. Списываем деньги
-//    РОВНО ОДИН РАЗ, когда он переключается 0 -> 1. Кнопка "обновить
-//    ссылку" (force=true) НЕ считается новой оплатой - она только
-//    заставляет заново спросить у Go живую ссылку, а не списывает деньги.
-//
-// 2. "Жива ли ссылка прямо сейчас" - НЕ доверяем локальному кэшу vpn_link
-//    молча. Каждый раз, когда нужно отдать ссылку (первая оплата ИЛИ
-//    force=true), реально спрашиваем у Go/3x-ui - если клиента удалили
-//    в панели руками, Go пересоздаст его сам, и мы отдадим рабочую
-//    ссылку вместо мёртвой.
-//
-// 3. Атомарность списания - вся проверка "не оплачено ещё + хватает
-//    денег" и сам факт списания происходят ОДНИМ синхронным SQL-запросом
-//    без await между чтением и записью. Это исключает гонку: даже если
-//    юзер тыкает кнопку очень быстро несколько раз подряд, второй запрос
-//    увидит subscription_active уже = 1 и не спишет деньги повторно.
-// Создаёт (или подтверждает существующую) ссылку на VPN-подписку для
-// текущего залогиненного пользователя.
-//
-// Три вещи, которые тут специально разведены:
-//
-// 1. "Оплачено ли вообще" - флаг subscription_active. Списываем деньги
-//    РОВНО ОДИН РАЗ, когда он переключается 0 -> 1. Кнопка "обновить
-//    ссылку" (force=true) НЕ считается новой оплатой - она только
-//    заставляет заново спросить у Go живую ссылку, а не списывает деньги.
-//
-// 2. "Жива ли ссылка прямо сейчас" - НЕ доверяем локальному кэшу vpn_link
-//    молча. Каждый раз, когда нужно отдать ссылку (первая оплата ИЛИ
-//    force=true), реально спрашиваем у Go/3x-ui - если клиента удалили
-//    в панели руками, Go пересоздаст его сам, и мы отдадим рабочую
-//    ссылку вместо мёртвой.
-//
-// 3. Атомарность списания - вся проверка "не оплачено ещё + хватает
-//    денег" и сам факт списания происходят ОДНИМ синхронным SQL-запросом
-//    без await между чтением и записью. Это исключает гонку: даже если
-//    юзер тыкает кнопку очень быстро несколько раз подряд, второй запрос
-//    увидит subscription_active уже = 1 и не спишет деньги повторно.
+// Логика:
+// 1. Если подписка ещё активна (subscription_expires_at в будущем) -
+//    деньги НЕ списываются, просто освежаем ссылку через Go (self-heal,
+//    если клиента вдруг удалили в панели руками).
+// 2. Если подписки нет или она истекла - атомарно списываем
+//    SUBSCRIPTION_COST и продлеваем на SUBSCRIPTION_DURATION_MS вперёд
+//    от текущего момента. Атомарность (без await между чтением и
+//    записью) исключает двойное списание при быстрых повторных кликах.
+// 3. В любом случае Go получает актуальный expiry_time и сам следит,
+//    чтобы в 3x-ui у клиента стояло то же самое значение - панель сама
+//    отключит клиента, когда время истечёт (встроенный cron 3x-ui).
 app.post('/create', requireAuth, async (req, res) => {
 	const user = db
 		.prepare(
-			'SELECT id, telegram_id, balance, subscription_active, vpn_link FROM users WHERE id = ?'
+			'SELECT id, telegram_id, balance, subscription_expires_at FROM users WHERE id = ?'
 		)
 		.get(req.session.userId)
 
@@ -216,45 +192,49 @@ app.post('/create', requireAuth, async (req, res) => {
 		return res.status(401).json({ error: 'Не авторизован' })
 	}
 
-	const forceRecreate = req.body?.force === true
 	const vip = isVip(user.telegram_id)
-	let alreadyActive = !!user.subscription_active
+	const now = Date.now()
+	let expiresAt = user.subscription_expires_at || 0
+	let isActive = expiresAt > now
 
-	// --- Синхронный, атомарный блок списания. Между чтением состояния и
-	// записью НЕТ ни одного await, поэтому конкурентный запрос физически
-	// не может протиснуться между ними (Node однопоточный, better-sqlite3
-	// выполняется синхронно).
-	if (!alreadyActive) {
+	// --- Синхронный атомарный блок списания (без await внутри) ---
+	if (!isActive) {
+		const newExpiry = now + SUBSCRIPTION_DURATION_MS
+
 		if (vip) {
-			// VIP просто активируем без списания.
-			const result = db
-				.prepare(
-					'UPDATE users SET subscription_active = 1 WHERE id = ? AND subscription_active = 0'
-				)
-				.run(user.id)
-			alreadyActive = true // после этого шага пользователь точно активен -
-			// либо активировали мы, либо кто-то параллельно уже успел
+			db.prepare(
+				`UPDATE users SET subscription_expires_at = ?
+				 WHERE id = ? AND (subscription_expires_at IS NULL OR subscription_expires_at <= ?)`
+			).run(newExpiry, user.id, now)
+			expiresAt = newExpiry
+			isActive = true
 		} else {
 			const result = db
 				.prepare(
 					`UPDATE users
-					 SET balance = balance - ?, subscription_active = 1
-					 WHERE id = ? AND subscription_active = 0 AND balance >= ?`
+					 SET balance = balance - ?, subscription_expires_at = ?
+					 WHERE id = ?
+					   AND (subscription_expires_at IS NULL OR subscription_expires_at <= ?)
+					   AND balance >= ?`
 				)
-				.run(SUBSCRIPTION_COST, user.id, SUBSCRIPTION_COST)
+				.run(SUBSCRIPTION_COST, newExpiry, user.id, now, SUBSCRIPTION_COST)
 
 			if (result.changes === 1) {
-				alreadyActive = true // мы списали деньги прямо сейчас
+				expiresAt = newExpiry
+				isActive = true
 			} else {
-				// Условие WHERE не сработало - либо не хватило денег,
-				// либо (гонка) кто-то параллельно уже активировал подписку.
-				// Перечитываем актуальное состояние, чтобы понять, что именно.
+				// Либо не хватило денег, либо (гонка) параллельный запрос
+				// уже продлил подписку - перечитываем актуальное состояние.
 				const fresh = db
-					.prepare('SELECT subscription_active FROM users WHERE id = ?')
+					.prepare('SELECT subscription_expires_at FROM users WHERE id = ?')
 					.get(user.id)
 
-				if (fresh.subscription_active) {
-					alreadyActive = true // параллельный запрос уже всё оплатил - не ошибка
+				if (
+					fresh.subscription_expires_at &&
+					fresh.subscription_expires_at > now
+				) {
+					expiresAt = fresh.subscription_expires_at
+					isActive = true
 				} else {
 					return res
 						.status(402)
@@ -263,12 +243,8 @@ app.post('/create', requireAuth, async (req, res) => {
 			}
 		}
 	}
-	// --- конец атомарного блока
+	// --- конец атомарного блока ---
 
-	// Если это первый заход (только что стали alreadyActive) и НЕ force -
-	// сразу создаём. Если это повторный визит без force - можно было бы
-	// отдать закэшированную ссылку не ходя в Go, но это и есть баг №3
-	// из прошлого раза (мёртвая ссылка) - поэтому ходим в Go всегда.
 	try {
 		const controller = new AbortController()
 		const timeoutId = setTimeout(() => controller.abort(), 20000)
@@ -281,7 +257,8 @@ app.post('/create', requireAuth, async (req, res) => {
 			},
 			body: JSON.stringify({
 				user_id: user.id,
-				telegram_id: user.telegram_id
+				telegram_id: user.telegram_id,
+				expiry_time: expiresAt
 			}),
 			signal: controller.signal
 		})
@@ -304,7 +281,12 @@ app.post('/create', requireAuth, async (req, res) => {
 			.prepare('SELECT balance FROM users WHERE id = ?')
 			.get(user.id)
 
-		res.json({ success: true, link: data.link, balance: updatedUser.balance })
+		res.json({
+			success: true,
+			link: data.link,
+			balance: updatedUser.balance,
+			expires_at: expiresAt
+		})
 	} catch (err) {
 		console.error('create error:', err)
 		const message =
