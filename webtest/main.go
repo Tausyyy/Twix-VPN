@@ -232,7 +232,7 @@ func addClient(email string, tgID int64) error {
 	var payload newClientPayload
 	payload.Client.Email = email
 	payload.Client.TotalGB = 0
-	payload.Client.ExpiryTime = 0
+	payload.Client.ExpiryTime = expiryTimeMs
 	payload.Client.TgID = tgID
 	payload.Client.LimitIP = 0
 	payload.Client.Enable = true
@@ -348,6 +348,7 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 type internalCreateRequest struct {
 	UserID int64 `json:"user_id"`
 	TelegramID int64 `json:"telegram_id"`
+	ExpiryTime int64 `json:"expiry_time"`
 }
 
 // internalCreateHandler создаёт (или находит уже существующего) клиента в
@@ -376,12 +377,13 @@ func internalCreateHandler(w http.ResponseWriter, r *http.Request) {
 	// 1) Сначала спрашиваем у панели: а вдруг клиент уже есть?
 	subID, err := getClientSubID(email)
 	if err != nil {
-		// 2) Раз клиента нет (или временная сетевая ошибка) - создаём.
-		addErr := addClient(email, req.TelegramID)
+		// 2) Раз клиента нет (или временная сетевая ошибка) - создаём
+		// сразу с нужным сроком действия.
+		addErr := addClient(email, req.TelegramID, req.ExpiryTime)
 		if addErr != nil {
 			// возможно сессия/csrf протухли — пробуем перелогиниться и повторить один раз
 			if loginErr := panelLogin(); loginErr == nil {
-				addErr = addClient(email, req.TelegramID)
+				addErr = addClient(email, req.TelegramID, req.ExpiryTime)
 			} else {
 				addErr = fmt.Errorf("%v (relogin also failed: %v)", addErr, loginErr)
 			}
@@ -399,8 +401,78 @@ func internalCreateHandler(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusInternalServerError, createResponse{Success: false, Error: err.Error()})
 			return
 		}
+	} else {
+		// Клиент уже существует - обновляем ему expiryTime на актуальное
+		// значение (либо продление после оплаты, либо просто освежаем то
+		// же самое значение при обычном заходе за ссылкой).
+		updErr := updateClientExpiry(email, req.TelegramID, req.ExpiryTime)
+		if updErr != nil {
+			if loginErr := panelLogin(); loginErr == nil {
+				updErr = updateClientExpiry(email, req.TelegramID, req.ExpiryTime)
+			}
+			if updErr != nil {
+				log.Println("internalCreateHandler updateClientExpiry error:", updErr)
+				// не фатально - продолжаем со старым expiryTime в панели,
+				// ссылку всё равно отдаём, просто залогируем проблему.
+			}
+		}
 	}
 
 	link := fmt.Sprintf("%s/%s", subBaseURL, subID)
 	writeJSON(w, http.StatusOK, createResponse{Success: true, Link: link})
+}
+
+// updateClientExpiry обновляет expiryTime у уже существующего клиента
+// через /panel/api/clients/update/{email}. Используется и для продления
+// подписки, и для того, чтобы держать дату истечения в панели в синхроне
+// с тем, что хранится в нашей БД, при каждом повторном обращении.
+//
+// ВНИМАНИЕ: точная форма тела запроса для этого эндпоинта не была
+// сверена с /panel/api-docs (в отличие от /clients/add, который мы
+// проверяли на реальных ответах панели). Перед тем как полагаться на
+// это в проде - проверь curl'ом на тестовом клиенте, что expiryTime
+// реально меняется, и поправь структуру payload при необходимости.
+func updateClientExpiry(email string, tgID int64, expiryTimeMs int64) error {
+	var payload newClientPayload
+	payload.Client.Email = email
+	payload.Client.TotalGB = 0
+	payload.Client.ExpiryTime = expiryTimeMs
+	payload.Client.TgID = tgID
+	payload.Client.LimitIP = 0
+	payload.Client.Enable = true
+	payload.Client.Flow = clientFlow
+	// inboundIds для update, скорее всего, не нужен (клиент уже
+	// привязан к своим инбаундам) - но панель может требовать его
+	// передавать тоже. Если update не сработает без этого поля,
+	// добавь: payload.InboundIds = inboundIDs
+
+	body, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", panelURL+"/panel/api/clients/update/"+email, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-CSRF-Token", currentCSRF)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	respBody, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("updateClientExpiry failed, status %d, body: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		Success bool   `json:"success"`
+		Msg     string `json:"msg"`
+	}
+	if err := json.Unmarshal(respBody, &result); err == nil && !result.Success {
+		return fmt.Errorf("updateClientExpiry rejected: %s", result.Msg)
+	}
+
+	return nil
 }
