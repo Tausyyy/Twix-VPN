@@ -164,9 +164,9 @@ app.post('/logout', (req, res) => {
 	req.session.destroy(() => res.json({ message: 'Вы вышли' }))
 })
 
+const SUBSCRIPTION_COST = Number(process.env.SUBSCRIPTION_COST || 0)
 const SUBSCRIPTION_DURATION_MS =
 	Number(process.env.SUBSCRIPTION_DURATION_DAYS || 30) * 24 * 60 * 60 * 1000
-
 // Создаёт (или продлевает/подтверждает существующую) VPN-подписку для
 // текущего залогиненного пользователя.
 //
