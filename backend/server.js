@@ -164,9 +164,9 @@ app.post('/logout', (req, res) => {
 	req.session.destroy(() => res.json({ message: 'Вы вышли' }))
 })
 
+const SUBSCRIPTION_COST = Number(process.env.SUBSCRIPTION_COST || 0)
 const SUBSCRIPTION_DURATION_MS =
 	Number(process.env.SUBSCRIPTION_DURATION_DAYS || 30) * 24 * 60 * 60 * 1000
-
 // Создаёт (или продлевает/подтверждает существующую) VPN-подписку для
 // текущего залогиненного пользователя.
 //
@@ -182,70 +182,66 @@ const SUBSCRIPTION_DURATION_MS =
 //    чтобы в 3x-ui у клиента стояло то же самое значение - панель сама
 //    отключит клиента, когда время истечёт (встроенный cron 3x-ui).
 app.post('/create', requireAuth, async (req, res) => {
-	const user = db
-		.prepare(
-			'SELECT id, telegram_id, balance, subscription_expires_at FROM users WHERE id = ?'
-		)
-		.get(req.session.userId)
+	try {
+		const user = db
+			.prepare(
+				'SELECT id, telegram_id, balance, subscription_expires_at FROM users WHERE id = ?'
+			)
+			.get(req.session.userId)
 
-	if (!user) {
-		return res.status(401).json({ error: 'Не авторизован' })
-	}
+		if (!user) {
+			return res.status(401).json({ error: 'Не авторизован' })
+		}
 
-	const vip = isVip(user.telegram_id)
-	const now = Date.now()
-	let expiresAt = user.subscription_expires_at || 0
-	let isActive = expiresAt > now
+		const vip = isVip(user.telegram_id)
+		const now = Date.now()
+		let expiresAt = user.subscription_expires_at || 0
+		let isActive = expiresAt > now
 
-	// --- Синхронный атомарный блок списания (без await внутри) ---
-	if (!isActive) {
-		const newExpiry = now + SUBSCRIPTION_DURATION_MS
+		if (!isActive) {
+			const newExpiry = now + SUBSCRIPTION_DURATION_MS
 
-		if (vip) {
-			db.prepare(
-				`UPDATE users SET subscription_expires_at = ?
-				 WHERE id = ? AND (subscription_expires_at IS NULL OR subscription_expires_at <= ?)`
-			).run(newExpiry, user.id, now)
-			expiresAt = newExpiry
-			isActive = true
-		} else {
-			const result = db
-				.prepare(
-					`UPDATE users
-					 SET balance = balance - ?, subscription_expires_at = ?
-					 WHERE id = ?
-					   AND (subscription_expires_at IS NULL OR subscription_expires_at <= ?)
-					   AND balance >= ?`
-				)
-				.run(SUBSCRIPTION_COST, newExpiry, user.id, now, SUBSCRIPTION_COST)
-
-			if (result.changes === 1) {
+			if (vip) {
+				db.prepare(
+					`UPDATE users SET subscription_expires_at = ?
+					 WHERE id = ? AND (subscription_expires_at IS NULL OR subscription_expires_at <= ?)`
+				).run(newExpiry, user.id, now)
 				expiresAt = newExpiry
 				isActive = true
 			} else {
-				// Либо не хватило денег, либо (гонка) параллельный запрос
-				// уже продлил подписку - перечитываем актуальное состояние.
-				const fresh = db
-					.prepare('SELECT subscription_expires_at FROM users WHERE id = ?')
-					.get(user.id)
+				const result = db
+					.prepare(
+						`UPDATE users
+						 SET balance = balance - ?, subscription_expires_at = ?
+						 WHERE id = ?
+						   AND (subscription_expires_at IS NULL OR subscription_expires_at <= ?)
+						   AND balance >= ?`
+					)
+					.run(SUBSCRIPTION_COST, newExpiry, user.id, now, SUBSCRIPTION_COST)
 
-				if (
-					fresh.subscription_expires_at &&
-					fresh.subscription_expires_at > now
-				) {
-					expiresAt = fresh.subscription_expires_at
+				if (result.changes === 1) {
+					expiresAt = newExpiry
 					isActive = true
 				} else {
-					return res
-						.status(402)
-						.json({ error: 'Недостаточно средств на балансе' })
+					const fresh = db
+						.prepare('SELECT subscription_expires_at FROM users WHERE id = ?')
+						.get(user.id)
+
+					if (
+						fresh.subscription_expires_at &&
+						fresh.subscription_expires_at > now
+					) {
+						expiresAt = fresh.subscription_expires_at
+						isActive = true
+					} else {
+						return res
+							.status(402)
+							.json({ error: 'Недостаточно средств на балансе' })
+					}
 				}
 			}
 		}
-	}
-	// --- конец атомарного блока ---
 
-	try {
 		const controller = new AbortController()
 		const timeoutId = setTimeout(() => controller.abort(), 20000)
 
@@ -289,11 +285,7 @@ app.post('/create', requireAuth, async (req, res) => {
 		})
 	} catch (err) {
 		console.error('create error:', err)
-		const message =
-			err.name === 'AbortError'
-				? 'Go-сервер не отвечает (таймаут)'
-				: 'Go-сервер недоступен'
-		res.status(502).json({ error: message })
+		res.status(500).json({ error: `Внутренняя ошибка: ${err.message}` })
 	}
 })
 

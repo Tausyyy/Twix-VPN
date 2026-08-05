@@ -372,7 +372,7 @@ func internalCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email := fmt.Sprintf("user_%d@twix.local", req.UserID)
+	email := fmt.Sprintf("%d", req.TelegramID)
 
 	// 1) Сначала спрашиваем у панели: а вдруг клиент уже есть?
 	subID, err := getClientSubID(email)
