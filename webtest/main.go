@@ -228,7 +228,7 @@ type newClientPayload struct {
 const clientFlow = "xtls-rprx-vision"
 
 // addClient создаёт клиента через новый API /panel/api/clients/add.
-func addClient(email string, tgID int64) error {
+func addClient(email string, tgID int64, expiryTimeMs int64) error {
 	var payload newClientPayload
 	payload.Client.Email = email
 	payload.Client.TotalGB = 0
