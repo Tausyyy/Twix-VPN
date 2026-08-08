@@ -136,7 +136,7 @@ async def receive_ticket(
 
 
     admin_message = await message.bot.send_message(
-        config.ADMIN_ID,
+        config.ADMIN_IDS,
         admin_text,
         parse_mode="HTML"
     )
@@ -145,7 +145,7 @@ async def receive_ticket(
     # отправляем само сообщение пользователя
 
     copied = await message.copy_to(
-        config.ADMIN_ID,
+        config.ADMIN_IDS,
         reply_to_message_id=admin_message.message_id
     )
 

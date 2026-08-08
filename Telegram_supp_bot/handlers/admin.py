@@ -30,7 +30,7 @@ router = Router()
 )
 async def admin_reply(message: Message):
 
-    if message.from_user.id != config.ADMIN_ID:
+    if message.from_user.id not in config.ADMIN_IDS:
         return
 
 
@@ -72,7 +72,7 @@ async def admin_reply(message: Message):
 @router.message(Command("close"))
 async def close_handler(message: Message):
 
-    if message.from_user.id != config.ADMIN_ID:
+    if message.from_user.id not in config.ADMIN_IDS:
         return
 
 
@@ -120,7 +120,7 @@ async def close_handler(message: Message):
 @router.message(Command("info"))
 async def info_handler(message: Message):
 
-    if message.from_user.id != config.ADMIN_ID:
+    if message.from_user.id not in config.ADMIN_IDS:
         return
 
 
@@ -167,7 +167,7 @@ async def info_handler(message: Message):
 @router.message(Command("ban"))
 async def ban_handler(message: Message):
 
-    if message.from_user.id != config.ADMIN_ID:
+    if message.from_user.id not in config.ADMIN_IDS:
         return
 
 
@@ -205,7 +205,7 @@ async def ban_handler(message: Message):
 @router.message(Command("unban"))
 async def unban_handler(message: Message):
 
-    if message.from_user.id != config.ADMIN_ID:
+    if message.from_user.id not in config.ADMIN_IDS:
         return
 
 
@@ -240,7 +240,7 @@ async def unban_handler(message: Message):
 @router.message(Command("history"))
 async def history_handler(message: Message):
 
-    if message.from_user.id != config.ADMIN_ID:
+    if message.from_user.id not in config.ADMIN_IDS:
         return
 
 
